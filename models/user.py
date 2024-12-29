@@ -21,8 +21,8 @@ class User(BaseModel, UserMixin):
     role = db.Column(db.Enum(Role), nullable=False, default=Role.STUDENT)
     
     # Foreign keys for school and district
-    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'))
-    district_id = db.Column(db.Integer, db.ForeignKey('districts.id'))
+    school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=True)
+    district_id = db.Column(db.Integer, db.ForeignKey('districts.id'), nullable=True)
     
     # Relationships
     school = db.relationship('School', back_populates='users')
@@ -52,5 +52,5 @@ class User(BaseModel, UserMixin):
         """Validate user data based on role"""
         if self.requires_school_info():
             if not self.school_id or not self.district_id:
-                raise ValueError(f"{self.role.value} requires school and district information")
-        return True 
+                return False, "Teachers and Observers must have both school and district assigned"
+        return True, "Validation successful" 

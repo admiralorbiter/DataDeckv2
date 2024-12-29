@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - {{ current_user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Profile Settings</h2>
+                </div>
+                <div class="card-body">
+                    <div class="user-info mb-4">
+                        <h3>Account Information</h3>
+                        <p><strong>Username:</strong> {{ current_user.username }}</p>
+                        <p><strong>Email:</strong> {{ current_user.email }}</p>
+                        <p><strong>Name:</strong> {{ current_user.first_name }} {{ current_user.last_name }}</p>
+                        <p><strong>Role:</strong> {{ current_user.role.value|title }}</p>
+                    </div>
+
+                    <div class="password-change">
+                        <h3>Change Password</h3>
+                        <form method="POST">
+                            {{ password_form.hidden_tag() }}
+                            <div class="mb-3">
+                                {{ password_form.current_password.label(class="form-label") }}
+                                {{ password_form.current_password(class="form-control") }}
+                            </div>
+                            <div class="mb-3">
+                                {{ password_form.new_password.label(class="form-label") }}
+                                {{ password_form.new_password(class="form-control") }}
+                            </div>
+                            <div class="mb-3">
+                                {{ password_form.confirm_password.label(class="form-label") }}
+                                {{ password_form.confirm_password(class="form-control") }}
+                            </div>
+                            {{ password_form.submit(class="btn btn-primary") }}
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} mt-3">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+</div>
+{% endblock %} 
