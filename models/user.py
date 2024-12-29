@@ -6,6 +6,15 @@ from datetime import datetime, timezone
 class User(BaseModel, UserMixin):
     __tablename__ = 'users'
     
+    # Add type discriminator column
+    type = db.Column(db.String(50))
+    
+    # Add polymorphic identity
+    __mapper_args__ = {
+        'polymorphic_identity': 'user',
+        'polymorphic_on': type
+    }
+    
     class Role(Enum):
         STUDENT = 'student'
         TEACHER = 'teacher'

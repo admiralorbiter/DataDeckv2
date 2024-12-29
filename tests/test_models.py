@@ -1,6 +1,7 @@
 import pytest
 from datetime import datetime, timezone
 from models import User, db
+from models.student import Student
 
 @pytest.fixture
 def test_user():
@@ -105,3 +106,27 @@ def test_user_unique_constraints(test_user, app):
         with pytest.raises(Exception):
             db.session.add(duplicate_email)
             db.session.commit()
+
+def test_student_creation():
+    """Test creating a student with character details"""
+    teacher = User(
+        username='teacher1',
+        email='teacher1@school.com',
+        password_hash='fakehash123',
+        role=User.Role.TEACHER
+    )
+    
+    student = Student(
+        username='student1',
+        email='student1@school.com',
+        password_hash='fakehash456',
+        character_name='Warrior123',
+        teacher_id=teacher.id,
+        character_description='A brave warrior',
+        avatar_path='/avatars/warrior.png'
+    )
+    
+    assert student.character_name == 'Warrior123'
+    assert student.teacher_id == teacher.id
+    assert student.role == User.Role.STUDENT
+    assert student.type == 'student'
