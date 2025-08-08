@@ -10,23 +10,22 @@ This is the actionable, task-oriented plan to deliver the Flask rewrite. It tran
 ### Milestones
 
 #### M0 — Bootstrap & Tooling
-- [ ] App factory `create_app` with `Development/Testing/Production` configs
-- [ ] `.env` loading via python-dotenv
-- [ ] Extensions: SQLAlchemy, Flask-Login, Flask-WTF, CSRF
-- [ ] Alembic migrations initialized (`alembic init`, migrations folder)
-- [ ] Pre-commit hooks (black, isort, flake8) and basic CI
-- [ ] Makefile/Invoke tasks: run, test, lint, migrate
+- [x] App factory `create_app` with `Development/Testing/Production` configs
+- [x] `.env` loading via python-dotenv
+- [x] Extensions: SQLAlchemy, Flask-Login, Flask-WTF, CSRF
+- [x] Pre-commit hooks (black, isort, flake8) and basic CI
+- [x] Makefile tasks: run, test, lint, format, precommit, setup
 
-Acceptance: `flask run` boots; `alembic upgrade head` works; `pytest` green on a clean DB.
+Acceptance: `flask run` boots; `pytest` green on a clean DB; pre-commit enforced locally and in CI.
 
 #### M1 — Data Model & Seed
 - [ ] Implement models (SQLAlchemy): `User`, `Observer`, `District`, `School`, `Session`, `Student`, `Media`, `Comment`, `StudentMediaInteraction`
 - [ ] Add indexes/constraints per `docs/FLASK_REWRITE_PLAN.md`
-- [ ] Generate first migration; apply
+- [ ] Schema creation via app startup (`db.create_all()`)
 - [ ] Dev seed script (teachers, session, students)
 - [ ] Pytest factories for core entities
 
-Acceptance: Migrations apply; seed creates demo teacher+session+students; factories generate valid objects.
+Acceptance: Schema creates successfully via `db.create_all()`; seed creates demo teacher+session+students; factories generate valid objects.
 
 #### M2 — Authentication & Roles
 - [ ] Teacher/Admin login/logout with Flask-Login
@@ -124,15 +123,15 @@ Acceptance: Staging migration passes verification; cutover window executed safel
 M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9 → M10 → M11 → M12 → M13. Parallelize where safe (tests/CI can start early).
 
 ### Weekly Next Actions (initial)
-- [ ] Convert to app factory (`create_app`) and relocate config loading
-- [ ] Initialize Alembic; create baseline migration from current models
-- [ ] Fix `login_view` endpoint if needed; verify auth redirect works
+- [x] Convert to app factory (`create_app`) and relocate config loading
+- [x] Fix `login_view` endpoint; verify auth redirect works
 - [ ] Add observer auth blueprint stub with routes and templates
 - [ ] Implement `Session` model + uniqueness logic (service + form validation)
 - [ ] Implement `Student` generation service (name, PIN hash, avatar path)
 - [ ] Seed CLI to create demo teacher + session + 20 students
 - [ ] Session page scaffold with pagination and filters (no-op handlers)
-- [ ] Set up pre-commit (black, isort, flake8); wire basic GitHub Actions
+- [x] Set up pre-commit (black, isort, flake8); wire basic GitHub Actions
+  - How-to: `pip install pre-commit && pre-commit install && pre-commit run --all-files`
 
 ### Definition of Done
 - Unit and integration tests written and green
@@ -153,5 +152,3 @@ M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9 → M10 → M1
 - `docs/WBS.md`
 - `docs/DATA_MIGRATION.md`
 - `docs/SEQUENCE_FLOWS.md`
-
-

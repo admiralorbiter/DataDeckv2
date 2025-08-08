@@ -122,5 +122,3 @@ Indexes/Constraints
 - Security: CSRF, XSS mitigations, session cookie flags, password hashing
 - Performance: pagination, indexing, storage offload
 - Maintainability: clear blueprints, services, consistent error contracts
-
-

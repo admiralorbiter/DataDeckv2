@@ -1,8 +1,10 @@
 from flask import render_template
+
 from .base import create_blueprint
 
-bp = create_blueprint('main')
+bp = create_blueprint("main")
 
-@bp.route('/')
+
+@bp.route("/")
 def index():
-    return render_template('index.html') 
+    return render_template("index.html")

@@ -41,5 +41,3 @@
 ### Accessibility & Internationalization
 - WCAG AA compliance; keyboard navigability
 - i18n for UI strings; locale-based formatting
-
-

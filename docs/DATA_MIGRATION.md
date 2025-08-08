@@ -69,5 +69,3 @@
 - Force password resets for teachers/observers if hashes changed
 - Enable background jobs in production (clear-expired-sessions)
 - Monitor logs for 48 hours; fix any migration edge cases
-
-

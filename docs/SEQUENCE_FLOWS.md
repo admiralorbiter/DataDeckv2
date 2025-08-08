@@ -58,5 +58,3 @@ Below flows outline request/response steps for critical user operations.
    - Query teachers by `observer.district`
    - Collect sessions and recent media (limit 50)
    - Render dashboard
-
-

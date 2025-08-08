@@ -17,7 +17,7 @@
     - [ ] Observer Role
         - [ ] Can view all data decks in their school
     - [ ] Student Role
-        - [ ] Can view class data deck only   
+        - [ ] Can view class data deck only
     - [ ] Staff Role
         - [ ] Can view all data decks in their school
         - [x] Can view all users in their school

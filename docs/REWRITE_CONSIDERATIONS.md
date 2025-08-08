@@ -180,5 +180,3 @@ This document enumerates decisions and options to consider before/during a clean
 - Browser support policy (Chromium/Firefox/Safari; iPadOS in classrooms)
 - Offline-safe interactions (queue reactions for retry)
 - Friendly 404/500 pages; consistent empty states
-
-

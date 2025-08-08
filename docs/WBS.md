@@ -135,5 +135,3 @@ This WBS breaks the rewrite into epics → stories → granular subtasks with ac
 - Story 15.2: Parallel run + validation
   - Subtasks: verify routes & data parity; stakeholder sign-off
   - AC: Go/no-go decision checklist completed
-
-

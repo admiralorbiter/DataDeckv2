@@ -183,5 +183,3 @@ Key Django routes defined in `video_app/urls.py` and `datadeck/urls.py`:
 - Media storage local-only; lack of virus scanning and image resizing
 - Observer/Teacher logins share `/admin/login/` path; UX and boundary can be clearer
 - Error handling in file deletion is best-effort; no centralized storage abstraction
-
-

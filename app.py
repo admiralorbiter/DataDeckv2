@@ -1,45 +1,63 @@
-# app.py
-
-from flask import Flask
-from models import db, User
-from flask_login import LoginManager
-from forms import LoginForm
-from routes import init_app as init_routes
-from config import DevelopmentConfig, ProductionConfig
-from dotenv import load_dotenv
 import os
 
-app = Flask(__name__)
+from dotenv import load_dotenv
+from flask import Flask
+from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
 
-# Load configuration based on the environment
-if os.environ.get('FLASK_ENV') == 'production':
-    app.config.from_object(ProductionConfig)
-else:
-    app.config.from_object(DevelopmentConfig)
+from config import DevelopmentConfig, ProductionConfig, TestingConfig
+from models import User, db
+from routes import init_app as init_routes
 
-# Initialize extensions
-db.init_app(app)
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'  # Redirect to 'login' view if unauthorized
-login_manager.login_message_category = 'info'
-
-# Create the database tables
-with app.app_context():
-    db.create_all()
-
-# User loader callback for Flask-Login
-@login_manager.user_loader
-def load_user(user_id):
-    return db.session.get(User, int(user_id))
-
-# Initialize routes
-init_routes(app)
-
-# Load environment variables from .env file
+# Load environment variables from .env file as early as possible
 load_dotenv()
 
-if __name__ == '__main__':
-    # Use production-ready server configuration
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+# Extensions (initialized without app; bound in create_app)
+login_manager = LoginManager()
+csrf = CSRFProtect()
+
+
+def create_app(config_name: str | None = None) -> Flask:
+    """Application factory for DataDeck v2."""
+    app = Flask(__name__)
+
+    # Select config
+    env = (config_name or os.environ.get("FLASK_ENV", "development")).lower()
+    if env == "production":
+        app.config.from_object(ProductionConfig)
+    elif env == "testing" or env == "test":
+        app.config.from_object(TestingConfig)
+    else:
+        app.config.from_object(DevelopmentConfig)
+
+    # Initialize extensions
+    db.init_app(app)
+    login_manager.init_app(app)
+    csrf.init_app(app)
+
+    # Flask-Login settings
+    login_manager.login_view = "auth.login"
+    login_manager.login_message_category = "info"
+
+    # User loader callback for Flask-Login
+    @login_manager.user_loader
+    def load_user(user_id):
+        return db.session.get(User, int(user_id))
+
+    # Register blueprints/routes
+    init_routes(app)
+
+    # Create DB schema on startup (no Alembic in current phase)
+    with app.app_context():
+        db.create_all()
+
+    return app
+
+
+# Create a default app instance for scripts and `python app.py`
+app = create_app()
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)

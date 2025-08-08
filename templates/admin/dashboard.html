@@ -6,7 +6,7 @@
 <div class="container mt-4">
     <h1>Admin Dashboard</h1>
     <p>Welcome, {{ current_user.username }}</p>
-    
+
     <div class="alert alert-info mb-4">
         This is a protected admin area. Only staff and admin users can access this page.
     </div>
@@ -195,13 +195,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('editRole').value = data.role;
                     document.getElementById('editSchool').value = data.school_id || '';
                     document.getElementById('editDistrict').value = data.district_id || '';
-                    
+
                     // Show/hide school/district fields based on initial role
                     const requiresSchool = ['teacher', 'observer'].includes(data.role);
                     document.querySelectorAll('.school-district-fields').forEach(field => {
                         field.style.display = requiresSchool ? 'block' : 'none';
                     });
-                    
+
                     new bootstrap.Modal(document.getElementById('editUserModal')).show();
                 });
         });
@@ -211,19 +211,19 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('saveUserEdit').addEventListener('click', function() {
         const formData = new FormData();
         const userId = document.getElementById('editUserId').value;
-        
+
         // Add all form fields to formData
         formData.append('username', document.getElementById('editUsername').value);
         formData.append('email', document.getElementById('editEmail').value);
         formData.append('first_name', document.getElementById('editFirstName').value);
         formData.append('last_name', document.getElementById('editLastName').value);
         formData.append('password', document.getElementById('editPassword').value);
-        
+
         // Only add role if admin
         {% if current_user.is_admin() %}
         formData.append('role', document.getElementById('editRole').value);
         {% endif %}
-        
+
         // Add school and district if role requires it
         const role = document.getElementById('editRole').value;
         if (['teacher', 'observer'].includes(role)) {
@@ -282,4 +282,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-{% endblock %} 
+{% endblock %}

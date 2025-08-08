@@ -53,7 +53,7 @@ pip install -r requirements.txt
   - `DATABASE_URL=postgresql://user:pass@localhost:5432/datadeck` (optional; defaults to local SQLite in dev)
 
 4) Initialize the database
-- The current starter uses `db.create_all()` on startup. Simply run the app once to create tables.
+- The starter uses `db.create_all()` on startup. Simply run the app once to create tables. Migrations (Alembic) are optional and not required for now.
 
 5) Run the app
 ```bash
@@ -70,6 +70,24 @@ python create_admin.py
 ```bash
 pytest -q
 ```
+
+## Pre-commit hooks
+Install and enable pre-commit to auto-format and lint on commit.
+
+Setup (once):
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+Run on all files:
+```bash
+pre-commit run --all-files
+```
+
+The configured hooks include Black, isort, Flake8, and basic whitespace/YAML/TOML/JSON checks. See `.pre-commit-config.yaml`.
+
+Flake8 uses `max-line-length=88` (Black-compatible) as configured in `.flake8`.
 
 ## Configuration
 - `DevelopmentConfig` uses SQLite via `SQLALCHEMY_DATABASE_URI = 'sqlite:///your_database.db'`.
