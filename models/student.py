@@ -14,6 +14,8 @@ class Student(User):
     # Use polymorphic identity to distinguish Student from User
     __mapper_args__ = {
         "polymorphic_identity": "student",
+        # Disambiguate joined-table inheritance when multiple FKs target users.id
+        "inherit_condition": id == User.id,
     }
 
     # Relationship to teacher

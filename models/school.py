@@ -10,7 +10,7 @@ class School(BaseModel):
 
     # Relationships
     district = db.relationship("District", back_populates="schools")
-    users = db.relationship("User", back_populates="school", lazy="dynamic")
+    users = db.relationship("User", back_populates="school_rel", lazy="dynamic")
 
     def __repr__(self):
         return f"<School {self.name}>"
