@@ -22,11 +22,11 @@
         </div>
         <div class="col-md-4 text-end">
             {% if session.is_archived %}
-                <span class="badge bg-secondary fs-6">Archived</span>
+                <span class="dd-badge archived fs-6">Archived</span>
             {% elif session.is_paused %}
-                <span class="badge bg-warning fs-6">Paused</span>
+                <span class="dd-badge paused fs-6">Paused</span>
             {% else %}
-                <span class="badge bg-success fs-6">Active</span>
+                <span class="dd-badge active fs-6">Active</span>
             {% endif %}
         </div>
     </div>
@@ -64,14 +64,7 @@
                 <button class="btn btn-outline-success" disabled>
                     <i class="fas fa-upload"></i> Upload Media (Coming Soon)
                 </button>
-                {% if not session.is_archived %}
-                    <form method="POST" action="{{ url_for('sessions.archive_session', session_id=session.id) }}" class="d-inline">
-                        <button type="submit" class="btn btn-outline-secondary"
-                                onclick="return confirm('Archive this session? Students will no longer be able to access it.')">
-                            <i class="fas fa-archive"></i> Archive Session
-                        </button>
-                    </form>
-                {% else %}
+                {% if session.is_archived %}
                     <form method="POST" action="{{ url_for('sessions.unarchive_session', session_id=session.id) }}" class="d-inline">
                         <button type="submit" class="btn btn-outline-success"
                                 onclick="return confirm('Unarchive this session?')">
@@ -82,6 +75,32 @@
                         <button type="submit" class="btn btn-outline-danger"
                                 onclick="return confirm('⚠️ PERMANENTLY DELETE this session?\\n\\nThis will delete:\\n• All student data ({{ students|length }} students)\\n• All media uploads ({{ media|length }} items)\\n• Session history\\n\\nThis action CANNOT be undone!')">
                             <i class="fas fa-trash"></i> Delete Session
+                        </button>
+                    </form>
+                {% elif session.is_paused %}
+                    <form method="POST" action="{{ url_for('sessions.unpause_session', session_id=session.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-outline-success"
+                                onclick="return confirm('Resume this session? Students will be able to access it again.')">
+                            <i class="fas fa-play"></i> Resume Session
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('sessions.archive_session', session_id=session.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-outline-secondary"
+                                onclick="return confirm('Archive this session? This will permanently disable student access.')">
+                            <i class="fas fa-archive"></i> Archive Session
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="POST" action="{{ url_for('sessions.pause_session', session_id=session.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-outline-warning"
+                                onclick="return confirm('Pause this session? Students will temporarily lose access until resumed.')">
+                            <i class="fas fa-pause"></i> Pause Session
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('sessions.archive_session', session_id=session.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-outline-secondary"
+                                onclick="return confirm('Archive this session? Students will no longer be able to access it.')">
+                            <i class="fas fa-archive"></i> Archive Session
                         </button>
                     </form>
                 {% endif %}

@@ -290,6 +290,76 @@ def delete_session(session_id):
     return redirect(url_for("sessions.list_sessions"))
 
 
+@bp.route("/sessions/<int:session_id>/pause", methods=["POST"])
+@login_required
+def pause_session(session_id):
+    """Pause a session to temporarily prevent student access."""
+    session = Session.query.get_or_404(session_id)
+
+    # Check ownership for teachers
+    if current_user.is_teacher() and session.created_by_id != current_user.id:
+        flash("You can only pause your own sessions.", "danger")
+        return redirect(url_for("sessions.list_sessions"))
+
+    # Can't pause archived sessions
+    if session.is_archived:
+        flash("Cannot pause archived sessions.", "warning")
+        return redirect(url_for("sessions.list_sessions"))
+
+    # Check if already paused
+    if session.is_paused:
+        flash("Session is already paused.", "info")
+        return redirect(url_for("sessions.list_sessions"))
+
+    try:
+        session.is_paused = True
+        db.session.commit()
+        flash(
+            f"Session '{session.name}' has been paused. Students cannot access it.",
+            "success",
+        )
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error pausing session: {str(e)}", "danger")
+
+    return redirect(url_for("sessions.list_sessions"))
+
+
+@bp.route("/sessions/<int:session_id>/unpause", methods=["POST"])
+@login_required
+def unpause_session(session_id):
+    """Resume/unpause a session to allow student access."""
+    session = Session.query.get_or_404(session_id)
+
+    # Check ownership for teachers
+    if current_user.is_teacher() and session.created_by_id != current_user.id:
+        flash("You can only resume your own sessions.", "danger")
+        return redirect(url_for("sessions.list_sessions"))
+
+    # Can't unpause archived sessions
+    if session.is_archived:
+        flash("Cannot resume archived sessions. Unarchive first.", "warning")
+        return redirect(url_for("sessions.list_sessions"))
+
+    # Check if already active
+    if not session.is_paused:
+        flash("Session is already active.", "info")
+        return redirect(url_for("sessions.list_sessions"))
+
+    try:
+        session.is_paused = False
+        db.session.commit()
+        flash(
+            f"Session '{session.name}' has been resumed. Students can now access it.",
+            "success",
+        )
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error resuming session: {str(e)}", "danger")
+
+    return redirect(url_for("sessions.list_sessions"))
+
+
 @bp.route("/api/sessions/check-section", methods=["GET"])
 @login_required
 def check_section_availability():

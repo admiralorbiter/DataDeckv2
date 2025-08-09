@@ -76,11 +76,11 @@
                         <h6 class="mb-0">Section {{ session.section }}</h6>
                         <div>
                             {% if session.is_archived %}
-                                <span class="dd-badge">Archived</span>
+                                <span class="dd-badge archived">Archived</span>
                             {% elif session.is_paused %}
-                                <span class="dd-badge">Paused</span>
+                                <span class="dd-badge paused">Paused</span>
                             {% else %}
-                                <span class="dd-badge teacher">Active</span>
+                                <span class="dd-badge active">Active</span>
                             {% endif %}
                         </div>
                     </div>
@@ -126,7 +126,26 @@
                                             <i class="fas fa-trash"></i> Delete
                                         </button>
                                     </form>
+                                {% elif session.is_paused %}
+                                    <form method="POST" action="{{ url_for('sessions.unpause_session', session_id=session.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-success btn-sm"
+                                                onclick="return confirm('Resume this session? Students will be able to access it again.')">
+                                            <i class="fas fa-play"></i> Resume
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('sessions.archive_session', session_id=session.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm"
+                                                onclick="return confirm('Archive this session? This will permanently disable student access.')">
+                                            <i class="fas fa-archive"></i> Archive
+                                        </button>
+                                    </form>
                                 {% else %}
+                                    <form method="POST" action="{{ url_for('sessions.pause_session', session_id=session.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-warning btn-sm"
+                                                onclick="return confirm('Pause this session? Students will temporarily lose access until resumed.')">
+                                            <i class="fas fa-pause"></i> Pause
+                                        </button>
+                                    </form>
                                     <form method="POST" action="{{ url_for('sessions.archive_session', session_id=session.id) }}" class="d-inline">
                                         <button type="submit" class="btn btn-outline-secondary btn-sm"
                                                 onclick="return confirm('Archive this session? Students will no longer be able to access it.')">
