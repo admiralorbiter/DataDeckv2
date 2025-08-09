@@ -88,7 +88,7 @@ def seed(num_students: int = 20) -> None:
         for i in range(1, num_students + 1):
             username = f"student{i:02d}"
             email = f"{username}@example.com"
-            pin = f"{random.randint(1000, 9999)}"
+            pin = f"{random.randint(100000, 999999)}"
             student = Student(
                 username=username,
                 email=email,

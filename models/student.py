@@ -13,6 +13,7 @@ class Student(User):
     section_id = db.Column(db.Integer, db.ForeignKey("sessions.id"))
     device_id = db.Column(db.String(128))
     pin_hash = db.Column(db.String(128))
+    current_pin = db.Column(db.String(6))  # Plain text PIN for teacher viewing
 
     # Use polymorphic identity to distinguish Student from User
     __mapper_args__ = {

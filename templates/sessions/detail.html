@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ session.name }}{% endblock %}
+{% block title %}{{ session_data.name }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -12,18 +12,18 @@
                     <i class="fas fa-arrow-left"></i> Back to Sessions
                 </a>
                 <div>
-                    <h2 class="mb-0">{{ session.name }}</h2>
+                    <h2 class="mb-0">{{ session_data.name }}</h2>
                     <small class="text-muted">
-                        Section {{ session.section }} • {{ session.module.display_name }} •
-                        Code: <code>{{ session.session_code }}</code>
+                        Section {{ session_data.section }} • {{ session_data.module.display_name }} •
+                        Code: <code>{{ session_data.session_code }}</code>
                     </small>
                 </div>
             </div>
         </div>
         <div class="col-md-4 text-end">
-            {% if session.is_archived %}
+            {% if session_data.is_archived %}
                 <span class="dd-badge archived fs-6">Archived</span>
-            {% elif session.is_paused %}
+            {% elif session_data.is_paused %}
                 <span class="dd-badge paused fs-6">Paused</span>
             {% else %}
                 <span class="dd-badge active fs-6">Active</span>
@@ -47,14 +47,41 @@
         </div>
         <div class="col-md-4">
             <div class="dd-card text-center p-4">
-                <div class="text-info" style="font-size:1.75rem; font-weight:700;">{{ session.character_set|title }}</div>
+                <div class="text-info" style="font-size:1.75rem; font-weight:700;">{{ session_data.character_set|title }}</div>
                 <div class="text-muted">Character Theme</div>
             </div>
         </div>
     </div>
 
+    <!-- Student Welcome Section -->
+    {% if viewing_student %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        {% if viewing_student.avatar_path %}
+                            <img src="{{ viewing_student.avatar_path }}" alt="{{ viewing_student.character_name }}"
+                                 class="rounded-circle" width="40" height="40">
+                        {% else %}
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                 style="width: 40px; height: 40px;">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <strong>Welcome, {{ viewing_student.character_name }}!</strong>
+                        <div class="small text-muted">You're viewing your class session</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Action Buttons -->
-    {% if current_user.is_teacher() and session.created_by_id == current_user.id or current_user.is_admin() or current_user.is_staff() %}
+    {% if current_user.is_authenticated and (current_user.is_teacher() and session_data.created_by_id == current_user.id or current_user.is_admin() or current_user.is_staff()) %}
     <div class="row mb-4">
         <div class="col-12">
             <div class="btn-group" role="group">
@@ -64,40 +91,40 @@
                 <button class="btn btn-outline-success" disabled>
                     <i class="fas fa-upload"></i> Upload Media (Coming Soon)
                 </button>
-                {% if session.is_archived %}
-                    <form method="POST" action="{{ url_for('sessions.unarchive_session', session_id=session.id) }}" class="d-inline">
+                {% if session_data.is_archived %}
+                    <form method="POST" action="{{ url_for('sessions.unarchive_session', session_id=session_data.id) }}" class="d-inline">
                         <button type="submit" class="btn btn-outline-success"
                                 onclick="return confirm('Unarchive this session?')">
                             <i class="fas fa-undo"></i> Unarchive Session
                         </button>
                     </form>
-                    <form method="POST" action="{{ url_for('sessions.delete_session', session_id=session.id) }}" class="d-inline">
+                    <form method="POST" action="{{ url_for('sessions.delete_session', session_id=session_data.id) }}" class="d-inline">
                         <button type="submit" class="btn btn-outline-danger"
                                 onclick="return confirm('⚠️ PERMANENTLY DELETE this session?\\n\\nThis will delete:\\n• All student data ({{ students|length }} students)\\n• All media uploads ({{ media|length }} items)\\n• Session history\\n\\nThis action CANNOT be undone!')">
                             <i class="fas fa-trash"></i> Delete Session
                         </button>
                     </form>
-                {% elif session.is_paused %}
-                    <form method="POST" action="{{ url_for('sessions.unpause_session', session_id=session.id) }}" class="d-inline">
+                {% elif session_data.is_paused %}
+                    <form method="POST" action="{{ url_for('sessions.unpause_session', session_id=session_data.id) }}" class="d-inline">
                         <button type="submit" class="btn btn-outline-success"
                                 onclick="return confirm('Resume this session? Students will be able to access it again.')">
                             <i class="fas fa-play"></i> Resume Session
                         </button>
                     </form>
-                    <form method="POST" action="{{ url_for('sessions.archive_session', session_id=session.id) }}" class="d-inline">
+                    <form method="POST" action="{{ url_for('sessions.archive_session', session_id=session_data.id) }}" class="d-inline">
                         <button type="submit" class="btn btn-outline-secondary"
                                 onclick="return confirm('Archive this session? This will permanently disable student access.')">
                             <i class="fas fa-archive"></i> Archive Session
                         </button>
                     </form>
                 {% else %}
-                    <form method="POST" action="{{ url_for('sessions.pause_session', session_id=session.id) }}" class="d-inline">
+                    <form method="POST" action="{{ url_for('sessions.pause_session', session_id=session_data.id) }}" class="d-inline">
                         <button type="submit" class="btn btn-outline-warning"
                                 onclick="return confirm('Pause this session? Students will temporarily lose access until resumed.')">
                             <i class="fas fa-pause"></i> Pause Session
                         </button>
                     </form>
-                    <form method="POST" action="{{ url_for('sessions.archive_session', session_id=session.id) }}" class="d-inline">
+                    <form method="POST" action="{{ url_for('sessions.archive_session', session_id=session_data.id) }}" class="d-inline">
                         <button type="submit" class="btn btn-outline-secondary"
                                 onclick="return confirm('Archive this session? Students will no longer be able to access it.')">
                             <i class="fas fa-archive"></i> Archive Session
@@ -116,10 +143,18 @@
                 <div class="p-3" style="border-bottom:1px solid var(--color-border);">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="fas fa-users"></i> Students</h5>
-                        <a href="{{ url_for('students.student_list', session_id=session.id) }}"
-                           class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-cog"></i> Manage
-                        </a>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('students.student_list', session_id=session_data.id) }}"
+                               class="btn btn-outline-primary">
+                                <i class="fas fa-cog"></i> Manage
+                            </a>
+                            {% if students %}
+                                <a href="{{ url_for('students.preview_pin_cards', session_id=session_data.id) }}"
+                                   class="btn btn-outline-info">
+                                    <i class="fas fa-id-card"></i> PIN Cards
+                                </a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 <div class="p-3">
@@ -168,7 +203,7 @@
                 <!-- Media Filter Section (Collapsible) -->
                 <div class="collapse" id="mediaFilters">
                     <div class="p-3" style="border-bottom:1px solid var(--color-border); background-color: var(--color-surface);">
-                        <form method="GET" action="{{ url_for('sessions.session_detail', session_id=session.id) }}">
+                        <form method="GET" action="{{ url_for('sessions.session_detail', session_id=session_data.id) }}">
                             <div class="row g-2">
                                 <div class="col-md-4">
                                     <label for="media_type" class="form-label form-label-sm">Type</label>
@@ -197,7 +232,7 @@
                                         <i class="fas fa-search"></i> Filter
                                     </button>
                                     {% if has_media_filters %}
-                                        <a href="{{ url_for('sessions.session_detail', session_id=session.id) }}" class="btn btn-outline-secondary btn-sm">
+                                        <a href="{{ url_for('sessions.session_detail', session_id=session_data.id) }}" class="btn btn-outline-secondary btn-sm">
                                             <i class="fas fa-times"></i> Clear
                                         </a>
                                     {% endif %}
@@ -255,7 +290,7 @@
                                 <ul class="pagination pagination-sm justify-content-center">
                                     <li class="page-item {% if not media_pagination.has_prev %}disabled{% endif %}">
                                         <a class="page-link"
-                                           href="{% if media_pagination.has_prev %}{{ url_for('sessions.session_detail', session_id=session.id, page=media_pagination.prev_num, media_type=request.args.get('media_type', ''), graph_tag=request.args.get('graph_tag', ''), variable_tag=request.args.get('variable_tag', ''), is_graph=request.args.get('is_graph', ''), posted_by=request.args.get('posted_by', '')) }}{% else %}#{% endif %}">
+                                           href="{% if media_pagination.has_prev %}{{ url_for('sessions.session_detail', session_id=session_data.id, page=media_pagination.prev_num, media_type=request.args.get('media_type', ''), graph_tag=request.args.get('graph_tag', ''), variable_tag=request.args.get('variable_tag', ''), is_graph=request.args.get('is_graph', ''), posted_by=request.args.get('posted_by', '')) }}{% else %}#{% endif %}">
                                             Previous
                                         </a>
                                     </li>
@@ -264,7 +299,7 @@
                                     </li>
                                     <li class="page-item {% if not media_pagination.has_next %}disabled{% endif %}">
                                         <a class="page-link"
-                                           href="{% if media_pagination.has_next %}{{ url_for('sessions.session_detail', session_id=session.id, page=media_pagination.next_num, media_type=request.args.get('media_type', ''), graph_tag=request.args.get('graph_tag', ''), variable_tag=request.args.get('variable_tag', ''), is_graph=request.args.get('is_graph', ''), posted_by=request.args.get('posted_by', '')) }}{% else %}#{% endif %}">
+                                           href="{% if media_pagination.has_next %}{{ url_for('sessions.session_detail', session_id=session_data.id, page=media_pagination.next_num, media_type=request.args.get('media_type', ''), graph_tag=request.args.get('graph_tag', ''), variable_tag=request.args.get('variable_tag', ''), is_graph=request.args.get('is_graph', ''), posted_by=request.args.get('posted_by', '')) }}{% else %}#{% endif %}">
                                             Next
                                         </a>
                                     </li>
@@ -283,7 +318,7 @@
                             {% if has_media_filters %}
                                 <i class="fas fa-search fa-2x text-muted mb-2"></i>
                                 <p class="text-muted">No media matches your filters.</p>
-                                <a href="{{ url_for('sessions.session_detail', session_id=session.id) }}" class="btn btn-outline-primary btn-sm">
+                                <a href="{{ url_for('sessions.session_detail', session_id=session_data.id) }}" class="btn btn-outline-primary btn-sm">
                                     <i class="fas fa-times"></i> Clear Filters
                                 </a>
                             {% else %}

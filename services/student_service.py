@@ -96,7 +96,7 @@ class StudentService:
             New PIN as string if successful, None if student not found or no permission
 
         Note:
-            - Generates a new 4-digit PIN
+            - Generates a new 6-digit PIN
             - Updates both password_hash and pin_hash fields
             - Returns the plain PIN for display to teacher (for PIN cards)
         """
@@ -107,15 +107,16 @@ class StudentService:
         if not student:
             return None
 
-        # Generate new 4-digit PIN
+        # Generate new 6-digit PIN
         import random
 
-        new_pin = f"{random.randint(1000, 9999)}"
+        new_pin = f"{random.randint(100000, 999999)}"
 
-        # Update hashed fields
+        # Update hashed fields and plain text PIN
         pin_hash = generate_password_hash(new_pin)
         student.password_hash = pin_hash
         student.pin_hash = pin_hash
+        student.current_pin = new_pin  # Store plain text PIN for teacher viewing
 
         return new_pin
 

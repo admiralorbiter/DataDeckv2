@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+  <div class="col-12">
+    <div class="text-center">
+      <div class="mb-3">
+        {% if student.avatar_path %}
+          <img src="{{ student.avatar_path }}" alt="{{ student.character_name }}"
+               class="rounded-circle" width="80" height="80">
+        {% else %}
+          <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto"
+               style="width: 80px; height: 80px; font-size: 2rem;">
+            <i class="fas fa-user"></i>
+          </div>
+        {% endif %}
+      </div>
+      <h1 class="display-6 mb-2">Welcome, {{ student.character_name }}!</h1>
+      <p class="lead text-muted">Ready to share your data visualizations?</p>
+    </div>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-md-8 col-lg-6">
+    <div class="dd-card text-center p-4">
+      <div class="mb-4">
+        <i class="fas fa-chart-bar fa-3x text-primary mb-3"></i>
+        <h3>Your Data Journey</h3>
+        <p class="text-muted">Upload visualizations, explore data, and learn from your classmates!</p>
+      </div>
+
+      {% if student.section %}
+        <div class="d-grid gap-2">
+          <a class="btn dd-btn-primary btn-lg" href="{{ url_for('sessions.session_detail', session_id=student.section.id) }}">
+            <i class="fas fa-arrow-right me-2"></i>Go to My Session
+          </a>
+          <small class="text-muted mt-2">
+            Session: {{ student.section.name }}
+            {% if student.section.module %}
+              <br>Module: {{ student.section.module.name }}
+            {% endif %}
+          </small>
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          Your teacher hasn't assigned you to a session yet. Check back soon!
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-12 text-center">
+    <small class="text-muted">
+      <i class="fas fa-user-graduate me-1"></i>
+      Student: {{ student.username }} |
+      <i class="fas fa-chalkboard-teacher me-1"></i>
+      Teacher: {{ student.teacher.first_name }} {{ student.teacher.last_name }}
+    </small>
+  </div>
+</div>
+{% endblock %}

@@ -33,6 +33,7 @@
             </div>
           </th>
           <th scope="col">Username</th>
+          <th scope="col">Login PIN</th>
           <th scope="col">Character Theme</th>
           {% if show_actions %}
             <th scope="col" width="120">Actions</th>
@@ -70,6 +71,14 @@
 
             <td>
               <code class="text-muted">{{ student.username }}</code>
+            </td>
+
+            <td>
+              {% if student.current_pin %}
+                <span class="badge bg-info fs-6 font-monospace">{{ student.current_pin }}</span>
+              {% else %}
+                <span class="text-muted">No PIN</span>
+              {% endif %}
             </td>
 
             <td>

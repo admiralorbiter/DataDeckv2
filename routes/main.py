@@ -15,6 +15,15 @@ bp = create_blueprint("main")
 
 @bp.route("/")
 def index():
+    # Check if this is a student session
+    student_id = session.get("student_id")
+    if student_id:
+        # Get student info for the dashboard
+        student = Student.query.get(student_id)
+        if student:
+            return render_template("student_dashboard.html", student=student)
+
+    # Regular teacher/admin dashboard
     return render_template("index.html")
 
 

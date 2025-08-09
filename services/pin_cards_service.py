@@ -194,18 +194,19 @@ class PinCardsService:
             # Generate unique PIN
             attempts = 0
             while attempts < 100:
-                pin = f"{random.randint(1000, 9999)}"
+                pin = f"{random.randint(100000, 999999)}"
                 if pin not in used_pins:
                     used_pins.add(pin)
                     break
                 attempts += 1
             else:
-                pin = f"{1000 + student.id}"  # Fallback using student ID
+                pin = f"{100000 + student.id}"  # Fallback using student ID
 
-            # Update student's PIN hash
+            # Update student's PIN hash and plain text PIN
             pin_hash = generate_password_hash(pin)
             student.password_hash = pin_hash
             student.pin_hash = pin_hash
+            student.current_pin = pin  # Store plain text PIN for teacher viewing
 
             student_pins[student.id] = pin
 

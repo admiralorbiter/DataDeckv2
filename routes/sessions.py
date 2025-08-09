@@ -1,13 +1,13 @@
 from datetime import datetime
 
-from flask import flash, redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
 
 from forms import MediaFilterForm, SessionFilterForm, StartSessionForm
 from models import Media, Session, db
 from services.session_service import SessionConflictError, SessionService
 
-from .base import create_blueprint
+from .base import create_blueprint, teacher_or_student_required
 
 bp = create_blueprint("sessions")
 
@@ -78,22 +78,34 @@ def start_session():
 
 
 @bp.route("/sessions/<int:session_id>")
-@login_required
+@teacher_or_student_required
 def session_detail(session_id):
     """View session details with media and students, including media filtering."""
-    session = Session.query.get_or_404(session_id)
+    session_obj = Session.query.get_or_404(session_id)
 
-    # Check ownership for teachers
-    if current_user.is_teacher() and session.created_by_id != current_user.id:
-        flash("You can only view your own sessions.", "danger")
-        return redirect(url_for("sessions.list_sessions"))
+    # Check access permissions
+    if current_user.is_authenticated:
+        # Teacher/admin access - check ownership
+        if current_user.is_teacher() and session_obj.created_by_id != current_user.id:
+            flash("You can only view your own sessions.", "danger")
+            return redirect(url_for("sessions.list_sessions"))
+    else:
+        # Student access - check if they belong to this session
+        student_id = session.get("student_id")
+        if student_id:
+            from models import Student
+
+            student = Student.query.get(student_id)
+            if not student or student.section_id != session_id:
+                flash("You can only access your assigned session.", "warning")
+                return redirect(url_for("main.index"))
 
     # Initialize media filter form
     media_filter_form = MediaFilterForm()
     media_filter_form.populate_tag_choices(session_id)
 
     # Get students for this session
-    students = session.students.all()
+    students = session_obj.students.all()
 
     # Build media query with filtering
     media_query = Media.query.filter(Media.session_id == session_id)
@@ -162,15 +174,24 @@ def session_detail(session_id):
         or posted_by_filter
     )
 
+    # Check if this is a student viewing
+    viewing_student = None
+    student_id = session.get("student_id")
+    if student_id:
+        from models import Student
+
+        viewing_student = Student.query.get(student_id)
+
     return render_template(
         "sessions/detail.html",
-        session=session,
+        session_data=session_obj,
         students=students,
         media=media,
         media_filter_form=media_filter_form,
         media_pagination=media_pagination,
         media_total_count=media_total_count,
         has_media_filters=has_media_filters,
+        viewing_student=viewing_student,
     )
 
 

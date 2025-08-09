@@ -90,7 +90,7 @@ def create_session(
 
 
 def create_student(teacher: User, session: Session) -> Student:
-    pin = str(random.randint(1000, 9999))
+    pin = str(random.randint(100000, 999999))
     student = Student(
         username=f"student_{rand_code(5).lower()}",
         email=f"{rand_code(6).lower()}@example.com",
@@ -99,6 +99,7 @@ def create_student(teacher: User, session: Session) -> Student:
         teacher_id=teacher.id,
         section_id=session.id,
         pin_hash=generate_password_hash(pin),
+        current_pin=pin,  # Store plain text PIN for teacher viewing
     )
     db.session.add(student)
     db.session.flush()

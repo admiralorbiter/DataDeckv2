@@ -124,7 +124,7 @@ class TestStudentRoutes:
         data = resp.get_json()
         assert data["success"] is True
         assert "new_pin" in data
-        assert len(data["new_pin"]) == 4
+        assert len(data["new_pin"]) == 6
 
     def test_bulk_delete_students(self, client, teacher_user, student_factory):
         """Test bulk deletion of students."""
@@ -282,7 +282,7 @@ class TestStudentServiceIntegration:
 
         new_pin = StudentService.reset_student_pin(student.id, teacher_user.id)
         assert new_pin is not None
-        assert len(new_pin) == 4
+        assert len(new_pin) == 6
         assert new_pin.isdigit()
 
         # Commit the changes and verify PIN hash was updated

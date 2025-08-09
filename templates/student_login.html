@@ -21,4 +21,41 @@
     </div>
   </div>
 </div>
+
+<script>
+// Update schools when district changes
+document.addEventListener('DOMContentLoaded', function() {
+    const districtSelect = document.getElementById('district_id');
+    const schoolSelect = document.getElementById('school_id');
+
+    // School data by district
+    const schoolsByDistrict = {
+        1: [  // Metro City Schools
+            {id: 1, name: 'Lincoln Elementary'},
+            {id: 2, name: 'Washington Middle'}
+        ],
+        2: [  // Riverside County
+            {id: 3, name: 'Oak Valley Elementary'},
+            {id: 4, name: 'Pine Ridge Middle'}
+        ]
+    };
+
+    districtSelect.addEventListener('change', function() {
+        const districtId = parseInt(this.value);
+
+        // Clear current school options
+        schoolSelect.innerHTML = '<option value="0">Select School</option>';
+
+        // Add schools for selected district
+        if (districtId && schoolsByDistrict[districtId]) {
+            schoolsByDistrict[districtId].forEach(function(school) {
+                const option = document.createElement('option');
+                option.value = school.id;
+                option.textContent = school.name;
+                schoolSelect.appendChild(option);
+            });
+        }
+    });
+});
+</script>
 {% endblock %}

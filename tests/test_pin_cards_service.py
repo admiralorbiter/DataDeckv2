@@ -60,7 +60,7 @@ class TestPinCardsService:
         # Verify new PINs were generated
         assert len(new_pins) == 3
         for student_id, pin in new_pins.items():
-            assert len(pin) == 4
+            assert len(pin) == 6
             assert pin.isdigit()
 
         # Verify PIN hashes were updated

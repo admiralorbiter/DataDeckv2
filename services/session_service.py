@@ -127,7 +127,7 @@ class SessionService:
 
         Creates the specified number of students with:
         - Unique character names based on session's character_set theme
-        - Unique 4-digit PINs (hashed for security)
+        - Unique 6-digit PINs (hashed for security)
         - Auto-generated usernames and email addresses
         - Avatar paths based on character theme
 
@@ -236,7 +236,7 @@ class SessionService:
             # Generate unique PIN
             attempts = 0
             while attempts < 100:
-                pin = f"{random.randint(1000, 9999)}"
+                pin = f"{random.randint(100000, 999999)}"
                 if pin not in used_pins:
                     used_pins.add(pin)
                     break
