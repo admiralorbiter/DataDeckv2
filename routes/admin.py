@@ -74,31 +74,56 @@ def create_user():
         # Create correct subclass for observer accounts so observer login works
         new_user = Observer(**base_kwargs) if is_observer else User(**base_kwargs)
 
-        # Handle school/district info (either names or IDs) to satisfy validation
-        school_name = request.form.get("school", "").strip()
-        district_name = request.form.get("district", "").strip()
-        school_id_str = request.form.get("school_id", "").strip()
-        district_id_str = request.form.get("district_id", "").strip()
+        # Handle school/district info for teachers/observers (only use IDs now)
+        if new_user.requires_school_info():
+            school_id_str = request.form.get("school_id", "").strip()
+            district_id_str = request.form.get("district_id", "").strip()
+            school_name = request.form.get("school", "").strip()
+            district_name = request.form.get("district", "").strip()
 
-        # Set school info (prefer ID over name)
-        if school_id_str:
-            try:
-                new_user.school_id = int(school_id_str)
-            except ValueError:
-                flash("Invalid school ID provided.", "danger")
-                return redirect(url_for("admin.admin_dashboard"))
-        elif school_name:
-            new_user.school = school_name
+            # Set school_id (prefer ID, but create school if name provided)
+            if school_id_str:
+                try:
+                    new_user.school_id = int(school_id_str)
+                except ValueError:
+                    flash("Invalid school ID provided.", "danger")
+                    return redirect(url_for("admin.admin_dashboard"))
+            elif school_name:
+                # Find or create school by name
+                school = School.query.filter_by(name=school_name).first()
+                if not school:
+                    # Need district first for school creation
+                    if not district_id_str and not district_name:
+                        flash(
+                            "District is required when creating a new school.", "danger"
+                        )
+                        return redirect(url_for("admin.admin_dashboard"))
+                    # Will set school after district is resolved
+                else:
+                    new_user.school_id = school.id
 
-        # Set district info (prefer ID over name)
-        if district_id_str:
-            try:
-                new_user.district_id = int(district_id_str)
-            except ValueError:
-                flash("Invalid district ID provided.", "danger")
-                return redirect(url_for("admin.admin_dashboard"))
-        elif district_name:
-            new_user.district = district_name
+            # Set district_id (prefer ID, but create district if name provided)
+            if district_id_str:
+                try:
+                    new_user.district_id = int(district_id_str)
+                except ValueError:
+                    flash("Invalid district ID provided.", "danger")
+                    return redirect(url_for("admin.admin_dashboard"))
+            elif district_name:
+                # Find or create district by name
+                district = District.query.filter_by(name=district_name).first()
+                if not district:
+                    district = District(name=district_name)
+                    db.session.add(district)
+                    db.session.flush()  # Get ID
+                new_user.district_id = district.id
+
+                # Now create school if needed
+                if school_name and not new_user.school_id:
+                    school = School(name=school_name, district_id=district.id)
+                    db.session.add(school)
+                    db.session.flush()  # Get ID
+                    new_user.school_id = school.id
         new_user.validate()
         db.session.add(new_user)
         db.session.commit()

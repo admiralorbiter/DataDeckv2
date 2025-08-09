@@ -63,8 +63,6 @@ def create_teacher(district: District, school, username: str | None = None) -> U
         role=User.Role.TEACHER,
         school_id=school.id,
         district_id=district.id,
-        school=school.name,
-        district=district.name,
     )
     db.session.add(teacher)
     db.session.flush()

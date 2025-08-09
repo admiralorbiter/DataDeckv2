@@ -18,18 +18,32 @@ def test_user():
 
 
 @pytest.fixture
-def test_teacher():
-    teacher = User(
-        username="teacher",
-        email="teacher@school.com",
-        password_hash="fakehash123",
-        first_name="Test",
-        last_name="Teacher",
-        role=User.Role.TEACHER,
-        school="Test School",
-        district="Test District",
-    )
-    return teacher
+def test_teacher(app):
+    with app.app_context():
+        # Create district and school first
+        from models import District, School
+
+        district = District(name="Test District")
+        db.session.add(district)
+        db.session.flush()
+
+        school = School(name="Test School", district_id=district.id)
+        db.session.add(school)
+        db.session.flush()
+
+        teacher = User(
+            username="teacher",
+            email="teacher@school.com",
+            password_hash="fakehash123",
+            first_name="Test",
+            last_name="Teacher",
+            role=User.Role.TEACHER,
+            school_id=school.id,
+            district_id=district.id,
+        )
+        db.session.add(teacher)
+        db.session.commit()
+        yield teacher
 
 
 def test_new_user(test_user):
@@ -45,8 +59,8 @@ def test_new_user(test_user):
 def test_teacher_requires_school_info(test_teacher):
     """Test that teachers require school and district info"""
     assert test_teacher.requires_school_info() is True
-    assert test_teacher.school == "Test School"
-    assert test_teacher.district == "Test District"
+    assert test_teacher.school.name == "Test School"
+    assert test_teacher.district.name == "Test District"
     test_teacher.validate()  # Should not raise an error
 
 
@@ -68,18 +82,34 @@ def test_student_doesnt_require_school_info(test_user):
     test_user.validate()  # Should not raise an error
 
 
-def test_user_roles():
+def test_user_roles(app):
     """Test user role assignments and checks"""
-    admin = User(username="admin", role=User.Role.ADMIN)
-    teacher = User(
-        username="teacher", role=User.Role.TEACHER, school="School", district="District"
-    )
-    student = User(username="student", role=User.Role.STUDENT)
+    with app.app_context():
+        admin = User(username="admin", role=User.Role.ADMIN)
 
-    assert admin.is_admin() is True
-    assert teacher.is_teacher() is True
-    assert student.is_student() is True
-    assert student.is_admin() is False
+        # Create district and school for teacher
+        from models import District, School
+
+        district = District(name="Test District")
+        db.session.add(district)
+        db.session.flush()
+
+        school = School(name="Test School", district_id=district.id)
+        db.session.add(school)
+        db.session.flush()
+
+        teacher = User(
+            username="teacher",
+            role=User.Role.TEACHER,
+            school_id=school.id,
+            district_id=district.id,
+        )
+        student = User(username="student", role=User.Role.STUDENT)
+
+        assert admin.is_admin() is True
+        assert teacher.is_teacher() is True
+        assert student.is_student() is True
+        assert student.is_admin() is False
 
 
 def test_user_unique_constraints(test_user, app):

@@ -35,7 +35,7 @@ class Session(BaseModel):
         query = cls.query.filter(
             cls.created_by_id == teacher_id,
             cls.section == section,
-            cls.is_archived is False,
+            cls.is_archived == False,  # noqa: E712
         )
         if exclude_session_id:
             query = query.filter(cls.id != exclude_session_id)

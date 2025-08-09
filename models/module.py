@@ -26,7 +26,7 @@ class Module(BaseModel):
     def get_active_modules(cls):
         """Get all active modules ordered by sort_order, then name."""
         return (
-            cls.query.filter(cls.is_active is True)
+            cls.query.filter(cls.is_active == True)  # noqa: E712
             .order_by(cls.sort_order.asc(), cls.name.asc())
             .all()
         )

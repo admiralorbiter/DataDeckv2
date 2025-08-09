@@ -8,13 +8,24 @@ from services.session_service import SessionConflictError, SessionService
 @pytest.fixture
 def teacher(app):
     with app.app_context():
+        # Create district and school first
+        from models import District, School
+
+        district = District(name="Test District")
+        db.session.add(district)
+        db.session.flush()
+
+        school = School(name="Test School", district_id=district.id)
+        db.session.add(school)
+        db.session.flush()
+
         teacher = User(
             username="teacher_test",
             email="teacher_test@example.com",
             password_hash=generate_password_hash("password"),
             role=User.Role.TEACHER,
-            school="Test School",
-            district="Test District",
+            school_id=school.id,
+            district_id=district.id,
         )
         db.session.add(teacher)
         db.session.commit()

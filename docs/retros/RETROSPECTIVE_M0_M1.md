@@ -114,6 +114,7 @@ Date: December 2024
 - [x] **Dynamic form choices** - Session creation form populates module choices from active modules
 - [x] **Default module seeding** - Three default modules created: Module 2, Module 4, and Any Data Project
 - [x] **Observer authentication unification** - Moved observers from separate session system to unified Flask-Login authentication, enabling profile access and password changes
+- [x] **Pure normalization implementation** - Removed denormalized school/district string fields, implemented clean foreign key relationships with automatic school/district creation
 
 ### Questions resolved
 
@@ -126,7 +127,7 @@ Date: December 2024
 ### Open questions for future consideration
 
 - **Observer profile**: ✅ **RESOLVED** - Observers now use unified Flask-Login authentication and can access the profile page to change passwords.
-- **Denormalized names**: Keep `User.school`/`User.district` strings long term? Sync strategy if kept?
+- **Denormalized names**: ✅ **RESOLVED** - Implemented pure normalization. Removed denormalized school/district strings, using only foreign key relationships with clean template access.
 - **Student PIN reset**: Always teacher-regenerated or add self-service option?
 
 ### Environment note (Windows test runner)

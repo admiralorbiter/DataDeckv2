@@ -15,13 +15,24 @@ from models import (
 @pytest.fixture
 def teacher(app):
     with app.app_context():
+        # Create district and school first
+        from models import District, School
+
+        district = District(name="District A")
+        db.session.add(district)
+        db.session.flush()
+
+        school = School(name="School A", district_id=district.id)
+        db.session.add(school)
+        db.session.flush()
+
         teacher = User(
             username="teachermodel",
             email="teachermodel@example.com",
             password_hash="hash",
             role=User.Role.TEACHER,
-            school="School A",
-            district="District A",
+            school_id=school.id,
+            district_id=district.id,
         )
         db.session.add(teacher)
         db.session.commit()

@@ -75,9 +75,9 @@ def test_admin_create_and_delete_user_flow(app, client):
             "first_name": "Teach",
             "last_name": "Er",
             "role": "teacher",
-            # satisfy validation via denormalized names
-            "school": "S1",
-            "district": "D1",
+            # satisfy validation via foreign keys
+            "school_id": "1",
+            "district_id": "1",
         },
         follow_redirects=True,
     )

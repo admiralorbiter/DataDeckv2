@@ -104,10 +104,10 @@ def test_create_teacher_with_school_names(app, client, admin_user):
         teacher = User.query.filter_by(username="teacher_names").first()
         assert teacher is not None
         assert teacher.role == User.Role.TEACHER
-        assert teacher.school == "My School"
-        assert teacher.district == "My District"
-        assert teacher.school_id is None  # No ID provided
-        assert teacher.district_id is None
+        assert teacher.school.name == "My School"
+        assert teacher.district.name == "My District"
+        assert teacher.school_id is not None  # Should be set from created school
+        assert teacher.district_id is not None  # Should be set from created district
 
 
 def test_create_teacher_without_school_info_fails(app, client, admin_user):
@@ -210,10 +210,10 @@ def test_create_teacher_with_empty_string_ids(app, client, admin_user):
         assert response.status_code == 200
         assert b"User created successfully!" in response.data
 
-        # Verify user was created with names, not IDs
+        # Verify user was created with relationships from names
         teacher = User.query.filter_by(username="teacher_empty").first()
         assert teacher is not None
-        assert teacher.school == "Empty School"
-        assert teacher.district == "Empty District"
-        assert teacher.school_id is None
-        assert teacher.district_id is None
+        assert teacher.school.name == "Empty School"
+        assert teacher.district.name == "Empty District"
+        assert teacher.school_id is not None  # Should be set from created school
+        assert teacher.district_id is not None  # Should be set from created district
