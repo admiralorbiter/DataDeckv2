@@ -42,3 +42,38 @@
   margin-bottom: var(--space-2);
   font-size: var(--fs-body-sm);
 }
+
+/* Pagination styling */
+.pagination-info {
+  font-size: var(--fs-body-sm);
+  color: var(--color-text-muted);
+}
+
+.pagination .page-link {
+  color: var(--color-primary);
+  border-color: var(--color-border);
+  padding: var(--space-2) var(--space-3);
+}
+
+.pagination .page-link:hover {
+  color: var(--color-primary-dark);
+  background-color: var(--color-surface);
+  border-color: var(--color-primary);
+}
+
+.pagination .page-item.active .page-link {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.pagination .page-item.disabled .page-link {
+  color: var(--color-text-muted);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.pagination-sm .page-link {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--fs-body-sm);
+}

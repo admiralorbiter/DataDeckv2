@@ -6,6 +6,7 @@
 {% from '_components/buttons.html' import primary %}
 {% from '_components/cards.html' import panel %}
 {% from '_components/forms.html' import field %}
+{% from '_components/pagination.html' import pagination as render_pagination %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>
@@ -151,6 +152,17 @@
                     <i class="fas fa-plus"></i> Start Your First Session
                 </a>
             {% endif %}
+        </div>
+    {% endif %}
+
+    <!-- Pagination -->
+    {% if pagination and pagination.pages > 1 %}
+        <div class="mt-4">
+            {{ render_pagination(pagination, 'sessions.list_sessions',
+                                request.args.get('status', ''),
+                                request.args.get('module', ''),
+                                request.args.get('date_from', ''),
+                                request.args.get('date_to', '')) }}
         </div>
     {% endif %}
 </div>

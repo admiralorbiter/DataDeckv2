@@ -167,16 +167,23 @@ def list_sessions():
         except ValueError:
             flash("Invalid 'to' date format.", "warning")
 
-    # Get count before executing query
-    total_count = query.count()
+    # Pagination parameters
+    page = request.args.get("page", 1, type=int)
+    per_page = 12  # Number of sessions per page (3 rows × 4 columns)
 
-    # Execute query with ordering
-    sessions = query.order_by(Session.created_at.desc()).all()
+    # Execute paginated query with ordering
+    pagination = query.order_by(Session.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+
+    sessions = pagination.items
+    total_count = pagination.total
 
     return render_template(
         "sessions/list.html",
         sessions=sessions,
         filter_form=filter_form,
+        pagination=pagination,
         total_count=total_count,
         has_filters=(status_filter or module_filter or date_from or date_to),
     )

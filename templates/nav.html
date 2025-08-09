@@ -17,10 +17,15 @@
           {% if current_user.is_authenticated %}
             <!-- Role-based session navigation -->
             {% if nav_sessions.type == 'teacher' and nav_sessions.data %}
-              <!-- Teacher: Dropdown with their active sessions -->
+              <!-- Teacher: Sessions with dropdown -->
+              <li class="nav-item">
+                <a class="nav-link dd-tab {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}" href="{{ url_for('sessions.list_sessions') }}">
+                  Sessions
+                </a>
+              </li>
               <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle dd-tab {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}" href="#" id="teacherSessionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  My Sessions ({{ nav_sessions.data|length }})
+                <a class="nav-link dropdown-toggle dd-tab" href="#" id="teacherSessionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Recent ({{ nav_sessions.data|length }})
                 </a>
                 <ul class="dropdown-menu" aria-labelledby="teacherSessionsDropdown">
                   {% for session in nav_sessions.data %}
@@ -30,14 +35,13 @@
                     </a></li>
                   {% endfor %}
                   <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="{{ url_for('sessions.list_sessions') }}">View All Sessions</a></li>
                   <li><a class="dropdown-item" href="{{ url_for('sessions.start_session') }}">Start New Session</a></li>
                 </ul>
               </li>
             {% elif nav_sessions.type == 'observer' and nav_sessions.data %}
               <!-- Observer: Dropdown with sessions from their district/school -->
               <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle dd-tab {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}" href="#" id="observerSessionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <a class="nav-link dropdown-toggle dd-tab {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}" href="{{ url_for('sessions.list_sessions') }}" id="observerSessionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                   District Sessions ({{ nav_sessions.data|length }})
                 </a>
                 <ul class="dropdown-menu" aria-labelledby="observerSessionsDropdown">
@@ -52,10 +56,15 @@
                 </ul>
               </li>
             {% elif nav_sessions.type == 'admin' and nav_sessions.data %}
-              <!-- Admin: Dropdown with sessions grouped by district/school -->
+              <!-- Admin: Sessions with dropdown -->
+              <li class="nav-item">
+                <a class="nav-link dd-tab {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}" href="{{ url_for('sessions.list_sessions') }}">
+                  Sessions
+                </a>
+              </li>
               <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle dd-tab {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}" href="#" id="adminSessionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  All Sessions
+                <a class="nav-link dropdown-toggle dd-tab" href="#" id="adminSessionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  By School
                 </a>
                 <ul class="dropdown-menu" aria-labelledby="adminSessionsDropdown">
                   {% for district_name, schools in nav_sessions.data.items() %}
@@ -73,8 +82,6 @@
                     {% endfor %}
                     {% if not loop.last %}<li><hr class="dropdown-divider"></li>{% endif %}
                   {% endfor %}
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="{{ url_for('sessions.list_sessions') }}">View All Sessions</a></li>
                 </ul>
               </li>
             {% else %}

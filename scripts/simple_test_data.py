@@ -190,55 +190,58 @@ def create_simple_test_data():
         db.session.flush()
         print(f"   ✅ Created {len(modules)} modules")
 
-        # Step 7: Create basic sessions (without students for now)
-        print("📖 Creating basic sessions...")
+        # Step 7: Create more sessions for pagination testing
+        print("📖 Creating sessions for pagination testing...")
         sessions = []
-        session_data = [
-            {
-                "teacher": teachers[0],
-                "name": "Alice's Math Class",
-                "section": 1,
-                "module": modules[0],
-            },
-            {
-                "teacher": teachers[0],
-                "name": "Alice's Science Class",
-                "section": 2,
-                "module": modules[1],
-            },
-            {
-                "teacher": teachers[1],
-                "name": "Bob's Reading Class",
-                "section": 1,
-                "module": modules[2],
-            },
-            {
-                "teacher": teachers[2],
-                "name": "Carol's Math Class",
-                "section": 1,
-                "module": modules[0],
-            },
-            {
-                "teacher": teachers[3],
-                "name": "David's Science Class",
-                "section": 1,
-                "module": modules[1],
-            },
-        ]
+        import random
+        from datetime import datetime, timedelta
 
-        for i, data in enumerate(session_data):
+        character_sets = ["animals", "superheroes", "fantasy", "space"]
+
+        # Create 25 sessions across teachers to test pagination (per_page = 12)
+        for i in range(25):
+            teacher = teachers[i % len(teachers)]  # Rotate through teachers
+            module = modules[i % len(modules)]  # Rotate through modules
+            character_set = random.choice(character_sets)
+
+            # Create unique section numbers to avoid conflicts
+            section = (i % 6) + 1  # Sections 1-6
+
+            # Create varied session names
+            session_names = [
+                f"{teacher.first_name}'s {module.name} - Period {section}",
+                f"Advanced {module.name} Session {i+1}",
+                f"{module.name} Workshop - Section {section}",
+                f"Interactive {module.name} Class",
+                f"{teacher.first_name}'s Special Session {i+1}",
+            ]
+            session_name = session_names[i % len(session_names)]
+
             session = Session(
-                name=data["name"],
-                session_code=f"TEST{i+1:03d}",  # Simple session codes
-                section=data["section"],
-                module_id=data["module"].id,
-                created_by_id=data["teacher"].id,
-                character_set="animals",
+                name=session_name,
+                session_code=f"TEST{i+1:03d}",
+                section=section,
+                module_id=module.id,
+                created_by_id=teacher.id,
+                character_set=character_set,
+                created_at=datetime.utcnow() - timedelta(days=random.randint(0, 30)),
             )
+
+            # Randomly archive some sessions (20%)
+            if i > 15 and random.random() < 0.2:
+                session.is_archived = True
+                session.archived_at = datetime.utcnow() - timedelta(
+                    days=random.randint(1, 10)
+                )
+
+            # Randomly pause some active sessions (10%)
+            elif i > 10 and random.random() < 0.1:
+                session.is_paused = True
+
             db.session.add(session)
             sessions.append(session)
 
-        print(f"   ✅ Created {len(sessions)} basic sessions")
+        print(f"   ✅ Created {len(sessions)} sessions for pagination testing")
 
         # Commit everything
         print("💾 Committing to database...")
@@ -254,14 +257,24 @@ def create_simple_test_data():
         else:
             print("   ❌ Admin login verification: FAILED")
 
-        print("\n✅ Simple test data created successfully!")
+        print("\n✅ Test data with pagination support created successfully!")
         print("📊 Summary:")
         print(f"   • Districts: {len(districts)}")
         print(f"   • Schools: {len(schools)}")
         print(f"   • Teachers: {len(teachers)}")
         print(f"   • Observers: {len(observers)}")
-        print(f"   • Sessions: {len(sessions)}")
+        print(f"   • Sessions: {len(sessions)} (includes active, archived, and paused)")
         print(f"   • Modules: {len(modules)}")
+
+        # Show session breakdown
+        active_count = sum(1 for s in sessions if not s.is_archived and not s.is_paused)
+        archived_count = sum(1 for s in sessions if s.is_archived)
+        paused_count = sum(1 for s in sessions if s.is_paused)
+
+        print("\n📋 Session Status Breakdown:")
+        print(f"   • Active: {active_count}")
+        print(f"   • Archived: {archived_count}")
+        print(f"   • Paused: {paused_count}")
 
         print("\n🧪 Test Accounts:")
         print("   Admin:     jonlane / nihilism")
@@ -269,6 +282,11 @@ def create_simple_test_data():
         print("              Password: teacher123")
         print("   Observers: observer.metro, observer.riverside")
         print("              Password: observer123")
+
+        print("\n🧪 Pagination Testing:")
+        print("   • 25 sessions created (pagination shows at 12+ sessions)")
+        print("   • Mixed status types for filter testing")
+        print("   • Multiple modules and character sets")
 
     except Exception as e:
         print(f"❌ Error creating test data: {e}")
