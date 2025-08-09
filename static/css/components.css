@@ -26,3 +26,19 @@
 .dd-badge.teacher { background: rgba(5,150,105,0.1); color: var(--color-teacher); }
 .dd-badge.observer { background: rgba(220,38,38,0.1); color: var(--color-observer); }
 .dd-badge.student { background: rgba(8,145,178,0.1); color: var(--color-student); }
+
+/* Filter section styling */
+.dd-filter-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.dd-filter-section .form-label {
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+  font-size: var(--fs-body-sm);
+}

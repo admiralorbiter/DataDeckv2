@@ -1,7 +1,9 @@
+from datetime import datetime
+
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
-from forms import StartSessionForm
+from forms import SessionFilterForm, StartSessionForm
 from models import Session, db
 from services.session_service import SessionConflictError, SessionService
 
@@ -98,20 +100,86 @@ def session_detail(session_id):
 @bp.route("/sessions")
 @login_required
 def list_sessions():
-    """List sessions for the current user."""
+    """List sessions for the current user with optional filtering."""
+    # Initialize filter form
+    filter_form = SessionFilterForm()
+    filter_form.populate_module_choices()
+
+    # Build base query based on user role
     if current_user.is_teacher():
-        sessions = (
-            Session.query.filter_by(created_by_id=current_user.id)
-            .order_by(Session.created_at.desc())
-            .all()
-        )
+        query = Session.query.filter_by(created_by_id=current_user.id)
     elif current_user.is_admin() or current_user.is_staff():
-        sessions = Session.query.order_by(Session.created_at.desc()).all()
+        query = Session.query
     else:
         flash("Access denied.", "danger")
         return redirect(url_for("main.index"))
 
-    return render_template("sessions/list.html", sessions=sessions)
+    # Apply filters from query parameters
+    status_filter = request.args.get("status", "")
+    module_filter = request.args.get("module", "")
+    date_from = request.args.get("date_from", "")
+    date_to = request.args.get("date_to", "")
+
+    # Set form data from query parameters
+    if status_filter:
+        filter_form.status.data = status_filter
+    if module_filter:
+        filter_form.module.data = int(module_filter) if module_filter else None
+    if date_from:
+        try:
+            filter_form.date_from.data = datetime.strptime(date_from, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+    if date_to:
+        try:
+            filter_form.date_to.data = datetime.strptime(date_to, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+
+    # Apply status filter
+    if status_filter == "active":
+        query = query.filter(
+            Session.is_archived.is_(False), Session.is_paused.is_(False)
+        )
+    elif status_filter == "archived":
+        query = query.filter(Session.is_archived.is_(True))
+    elif status_filter == "paused":
+        query = query.filter(Session.is_paused.is_(True))
+
+    # Apply module filter
+    if module_filter:
+        query = query.filter(Session.module_id == int(module_filter))
+
+    # Apply date filters
+    if date_from:
+        try:
+            from_date = datetime.strptime(date_from, "%Y-%m-%d")
+            query = query.filter(Session.created_at >= from_date)
+        except ValueError:
+            flash("Invalid 'from' date format.", "warning")
+
+    if date_to:
+        try:
+            to_date = datetime.strptime(date_to, "%Y-%m-%d")
+            # Add one day to include the entire end date
+            to_date = to_date.replace(hour=23, minute=59, second=59)
+            query = query.filter(Session.created_at <= to_date)
+        except ValueError:
+            flash("Invalid 'to' date format.", "warning")
+
+    # Get count before executing query
+    total_count = query.count()
+
+    # Execute query with ordering
+    sessions = query.order_by(Session.created_at.desc()).all()
+
+    return render_template(
+        "sessions/list.html",
+        sessions=sessions,
+        filter_form=filter_form,
+        total_count=total_count,
+        has_filters=(status_filter or module_filter or date_from or date_to),
+    )
 
 
 @bp.route("/sessions/<int:session_id>/archive", methods=["POST"])

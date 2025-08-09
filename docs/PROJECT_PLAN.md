@@ -44,7 +44,7 @@ Acceptance: Valid credentials redirect to dashboards; protected routes gated by 
 - [x] Basic session list and detail pages
 - [x] Archive/unarchive actions
 - [x] Module system with admin-configurable curriculum modules
-- [ ] Session filtering (by status, module, date)
+- [x] Session filtering (by status, module, date)
 - [ ] Session pagination for large datasets
 - [ ] Session delete functionality
 - [ ] Session pause/unpause functionality

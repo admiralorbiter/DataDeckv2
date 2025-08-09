@@ -1,6 +1,13 @@
 from flask_wtf import FlaskForm
-from wtforms import IntegerField, PasswordField, SelectField, StringField, SubmitField
-from wtforms.validators import DataRequired, Email, EqualTo, NumberRange
+from wtforms import (
+    DateField,
+    IntegerField,
+    PasswordField,
+    SelectField,
+    StringField,
+    SubmitField,
+)
+from wtforms.validators import DataRequired, Email, EqualTo, NumberRange, Optional
 
 from models.district import District
 from models.module import Module
@@ -154,3 +161,44 @@ class ModuleForm(FlaskForm):
         default=True,
     )
     submit = SubmitField("Save Module")
+
+
+class SessionFilterForm(FlaskForm):
+    """Form for filtering sessions by status, module, and date range."""
+
+    status = SelectField(
+        "Status",
+        choices=[
+            ("", "All Statuses"),
+            ("active", "Active"),
+            ("archived", "Archived"),
+            ("paused", "Paused"),
+        ],
+        validators=[Optional()],
+        default="",
+    )
+
+    module = SelectField(
+        "Module",
+        choices=[("", "All Modules")],  # Will be populated dynamically
+        validators=[Optional()],
+        coerce=lambda x: int(x) if x else None,
+        default="",
+    )
+
+    date_from = DateField(
+        "From Date", validators=[Optional()], render_kw={"placeholder": "Start date"}
+    )
+
+    date_to = DateField(
+        "To Date", validators=[Optional()], render_kw={"placeholder": "End date"}
+    )
+
+    submit = SubmitField("Apply Filters")
+
+    def populate_module_choices(self):
+        """Populate module choices from database."""
+        modules = Module.query.filter_by(is_active=True).order_by(Module.name).all()
+        choices = [("", "All Modules")]
+        choices.extend([(module.id, module.name) for module in modules])
+        self.module.choices = choices
