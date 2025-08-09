@@ -1,7 +1,6 @@
 # DataDeck v2 Accessibility
 
 **Status**: ✅ **WCAG AA Compliant** (M3.5)
-**Last Audit**: December 2024
 
 ## Summary
 

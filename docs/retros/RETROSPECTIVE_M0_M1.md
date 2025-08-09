@@ -1,7 +1,5 @@
 ## Retrospective — M0 (Bootstrap & Tooling) and M1 (Data Model & Seed)
 
-Date: December 2024
-
 **Status**: M0, M1, M2, and M3 complete. Session management, admin user creation, module system, and comprehensive testing implemented. Ready for M4.
 
 ### Executive summary
