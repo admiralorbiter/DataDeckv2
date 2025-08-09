@@ -25,11 +25,11 @@ This WBS breaks the rewrite into epics → stories → granular subtasks with ac
 
 ### Epic 3: Authentication & Roles
 - Story 3.1: Unified login/logout
-  - Subtasks: routes, forms, templates, password hashing, role checks, observer session handling
-  - AC: Valid login redirects to appropriate dashboard; invalid shows error; observers get session-based auth
+  - Subtasks: routes, forms, templates, password hashing, role checks, unified Flask-Login authentication
+  - AC: Valid login redirects to appropriate dashboard; invalid shows error; all users (including observers) use Flask-Login
 - Story 3.2: Role-based access control
-  - Subtasks: decorators `@observer_required`, `@admin_required`, role checks
-  - AC: Protected routes blocked for unauthorized users
+  - Subtasks: decorators `@login_required`, `@admin_required`, role checks, observer role validation
+  - AC: Protected routes blocked for unauthorized users; observers access profile pages
 - Story 3.3: Student PIN session
   - Subtasks: PIN form; session store `student_id`; security notes
   - AC: Valid PIN redirects to session; invalid shows error; no Flask-Login user required

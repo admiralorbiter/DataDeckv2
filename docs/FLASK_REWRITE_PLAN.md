@@ -80,10 +80,9 @@ Indexes/Constraints
   - GET `/observer/dashboard`
 
 ### Auth & Permissions
-- Teacher/Admin/Staff: Flask-Login user model + role checks for protected routes
-- Observer: separate session namespace (`observer_id`) stored in secure cookie; decorator `@observer_required`
+- Teacher/Admin/Staff/Observer: Flask-Login user model + role checks for protected routes (unified authentication)
 - Student: session-only `student_id` for permissions; decorator `@student_required` where applicable (upload, react, comment)
-- Unified login at `/login` handles all user types; observers get session-based auth, others get Flask-Login
+- Unified login at `/login` handles all user types with consistent Flask-Login authentication
 
 ### Forms & Validation (Flask-WTF)
 - StartSessionForm: section, num_students, district, school, first_name, last_name, module; enforce uniqueness for active hour

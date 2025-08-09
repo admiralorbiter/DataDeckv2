@@ -1,8 +1,9 @@
-from flask import redirect, render_template, session, url_for
+from flask import flash, redirect, render_template, url_for
+from flask_login import current_user, login_required
 
-from models import District, Observer, School, User, db
+from models import District, School, User, db
 
-from .base import create_blueprint, observer_required, student_required
+from .base import create_blueprint, student_required
 
 bp = create_blueprint("main")
 
@@ -13,13 +14,15 @@ def index():
 
 
 @bp.route("/observer/dashboard")
-@observer_required
+@login_required
 def observer_dashboard():
-    observer_id = session.get("observer_id")
-    observer = db.session.get(Observer, int(observer_id)) if observer_id else None
-    if not observer:
-        session.pop("observer_id", None)
-        return redirect(url_for("observer_auth.observer_login"))
+    # Check if current user is an observer
+    if not current_user.is_observer():
+        flash("Access denied. Observer role required.", "danger")
+        return redirect(url_for("main.index"))
+
+    # Current user is the observer (no need to query separately)
+    observer = current_user
 
     district = None
     schools = []
@@ -41,13 +44,15 @@ def observer_dashboard():
 
 
 @bp.route("/observer/schools/<int:school_id>")
-@observer_required
+@login_required
 def observer_school(school_id: int):
-    observer_id = session.get("observer_id")
-    observer = db.session.get(Observer, int(observer_id)) if observer_id else None
-    if not observer:
-        session.pop("observer_id", None)
-        return redirect(url_for("observer_auth.observer_login"))
+    # Check if current user is an observer
+    if not current_user.is_observer():
+        flash("Access denied. Observer role required.", "danger")
+        return redirect(url_for("main.index"))
+
+    # Current user is the observer
+    observer = current_user
 
     school = db.session.get(School, school_id)
     if (
