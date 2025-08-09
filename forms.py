@@ -2,7 +2,9 @@ from flask_wtf import FlaskForm
 from wtforms import IntegerField, PasswordField, SelectField, StringField, SubmitField
 from wtforms.validators import DataRequired, Email, EqualTo, NumberRange
 
+from models.district import District
 from models.module import Module
+from models.school import School
 from models.user import User
 
 
@@ -96,6 +98,35 @@ class StartSessionForm(FlaskForm):
         super(StartSessionForm, self).__init__(*args, **kwargs)
         # Populate module choices from database
         self.module.choices = Module.get_choices_for_form()
+
+
+class StudentLoginForm(FlaskForm):
+    district_id = SelectField("District", coerce=int, choices=[])
+    school_id = SelectField("School", coerce=int, choices=[])
+    pin = PasswordField(
+        "6-digit password",
+        validators=[DataRequired()],
+        render_kw={
+            "placeholder": "000000",
+            "inputmode": "numeric",
+            "pattern": "[0-9]{6}",
+            "maxlength": 6,
+        },
+    )
+    submit = SubmitField("Login")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Populate districts
+        districts = District.query.order_by(District.name).all()
+        self.district_id.choices = [(0, "Select District")] + [
+            (d.id, d.name) for d in districts
+        ]
+        # Initial schools (will be updated in route on selection)
+        schools = School.query.order_by(School.name).all()
+        self.school_id.choices = [(0, "Select School")] + [
+            (s.id, s.name) for s in schools
+        ]
 
 
 class ModuleForm(FlaskForm):

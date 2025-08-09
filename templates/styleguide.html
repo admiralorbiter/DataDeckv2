@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Style Guide{% endblock %}
+{% block content %}
+<h1 class="mb-4">Style Guide</h1>
+
+<section class="mb-5">
+  <h2>Tokens</h2>
+  <div class="row g-3">
+    <div class="col-auto p-3 dd-card" style="background: var(--color-primary); color: #fff;">Primary</div>
+    <div class="col-auto p-3 dd-card" style="background: var(--color-accent); color: #fff;">Accent</div>
+    <div class="col-auto p-3 dd-card" style="background: var(--color-surface);">Surface</div>
+    <div class="col-auto p-3 dd-card" style="background: var(--color-border);">Border</div>
+  </div>
+</section>
+
+<section class="mb-5">
+  <h2>Buttons</h2>
+  {% from '_components/buttons.html' import primary %}
+  {{ primary('Primary Button') }}
+</section>
+
+<section class="mb-5">
+  <h2>Form Field</h2>
+  {% from '_components/forms.html' import field %}
+  <form>
+    {{ field(form_example if false else namespace(input='').input, label='Example', placeholder='Placeholder') }}
+  </form>
+</section>
+{% endblock %}

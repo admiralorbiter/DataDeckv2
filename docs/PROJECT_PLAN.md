@@ -84,6 +84,10 @@ Acceptance: ✅ Core session creation and management works; ❌ Advanced filteri
 
 Acceptance: Base tokens load on all pages; component macros exist and are used in ≥3 pages; layouts are responsive without horizontal scroll at common breakpoints; axe reports no critical issues on key pages.
 
+Progress Update:
+- Completed: tokens in `brand.css`, base/nav refactor (two-row, sticky, centered), macros for buttons/forms/alerts/cards/pagination, style guide, refactor of `login.html`, `index.html`, `sessions/list.html`, `sessions/detail.html`, `admin/dashboard.html`, and `sessions/start.html`. Global flash messages wired in base; favicon added. Student login page added with district/school scoping and backend validation; logout link surfaces in header when applicable.
+- Remaining for M3.5: accessibility/Lighthouse pass and fixes; optional teacher sessions dropdown in nav; sessions list pagination once backend paging lands.
+
 #### M4 — Students
 - [ ] Student list (per teacher)
 - [ ] Delete with ownership checks

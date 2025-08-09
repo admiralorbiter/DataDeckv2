@@ -7,5 +7,15 @@
 {% endblock %}
 
 {% block content %}
-<h1>The Data Deck</h1>
+<div class="row align-items-center">
+  <div class="col-12 col-lg-8">
+    <h1 class="display-6 mb-3">The Data Deck</h1>
+    <p class="lead">A place for students to upload visualizations, react, and comment.</p>
+  </div>
+  <div class="col-12 col-lg-4 text-lg-end mt-3 mt-lg-0">
+    <a class="btn dd-btn-primary" href="{{ url_for('sessions.list_sessions') }}">
+      <i class="fa-solid fa-arrow-right-to-bracket me-2"></i>Go to Sessions
+    </a>
+  </div>
+  </div>
 {% endblock %}

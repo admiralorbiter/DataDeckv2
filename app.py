@@ -47,6 +47,19 @@ def create_app(config_name: str | None = None) -> Flask:
     # Register blueprints/routes
     init_routes(app)
 
+    # Template context processors
+    @app.context_processor
+    def inject_nav_sessions():
+        """Make nav session helper available to all templates."""
+        try:
+            from services.nav_sessions import get_nav_sessions_for_current_user
+
+            nav_sessions = get_nav_sessions_for_current_user()
+            return {"nav_sessions": nav_sessions}
+        except Exception:
+            # Graceful fallback if helper fails
+            return {"nav_sessions": {"type": "none", "data": None}}
+
     # Create DB schema on startup (no Alembic in current phase)
     with app.app_context():
         db.create_all()

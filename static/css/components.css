@@ -1,0 +1,28 @@
+/* DataDeck v2 component helpers (complements Bootstrap) */
+
+/* Spacing utilities (if Bootstrap utility not used) */
+.dd-container { max-width: 1200px; margin: 0 auto; padding: var(--space-6); }
+
+/* Forms */
+.dd-form-label { font-weight: 600; margin-bottom: var(--space-2); }
+.dd-input { border: 2px solid var(--color-border); border-radius: var(--radius-md); padding: 10px 12px; }
+.dd-input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+.dd-error { color: var(--color-error); font-size: var(--fs-body-sm); margin-top: var(--space-1); }
+
+/* Alerts/Toasts (basic) */
+.dd-alert { border-radius: var(--radius-md); padding: 12px 16px; }
+.dd-alert.success { background: #ecfdf5; color: #065f46; }
+.dd-alert.error { background: #fef2f2; color: #991b1b; }
+.dd-alert.info { background: #eff6ff; color: #1e40af; }
+.dd-alert.warning { background: #fff7ed; color: #9a3412; }
+
+/* Tables */
+.dd-table th { font-weight: 600; }
+.dd-table td, .dd-table th { border-color: var(--color-border) !important; }
+
+/* Badges */
+.dd-badge { display: inline-block; border-radius: 9999px; padding: 4px 10px; font-size: var(--fs-body-sm); }
+.dd-badge.admin { background: rgba(124,58,237,0.1); color: var(--color-admin); }
+.dd-badge.teacher { background: rgba(5,150,105,0.1); color: var(--color-teacher); }
+.dd-badge.observer { background: rgba(220,38,38,0.1); color: var(--color-observer); }
+.dd-badge.student { background: rgba(8,145,178,0.1); color: var(--color-student); }

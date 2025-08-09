@@ -1,0 +1,13 @@
+{% macro panel(title='', body='') -%}
+  <div class="dd-card p-3 mb-3">
+    {% if title %}<h5 class="mb-3">{{ title }}</h5>{% endif %}
+    {{ body|safe }}
+  </div>
+{%- endmacro %}
+
+{% macro stat(label, value, color_class='text-primary') -%}
+  <div class="dd-card text-center p-4">
+    <div class="{{ color_class }}" style="font-size:1.75rem; font-weight:700;">{{ value }}</div>
+    <div class="text-muted">{{ label }}</div>
+  </div>
+{%- endmacro %}

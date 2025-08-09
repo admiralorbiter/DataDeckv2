@@ -3,135 +3,100 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
+{% from '_components/forms.html' import field %}
+{% from '_components/alerts.html' import flash_messages, banner %}
+
 <div class="container mt-4">
-    <h1>Admin Dashboard</h1>
-    <p>Welcome, {{ current_user.username }}</p>
+  <h1 class="mb-2">Admin Dashboard</h1>
+  <p class="text-muted">Welcome, {{ current_user.username }}</p>
 
-    <div class="alert alert-info mb-4">
-        This is a protected admin area. Only staff and admin users can access this page.
-    </div>
+  {{ banner('info', 'This is a protected admin area. Only staff and admin users can access this page.') }}
 
-    {% if current_user.is_admin() %}
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3>Create New User</h3>
+  {% if current_user.is_admin() %}
+  <div class="dd-card p-3 mb-4">
+    <h3 class="mb-3">Create New User</h3>
+    <form method="POST" action="{{ url_for('admin.create_user') }}">
+      {{ form.hidden_tag() }}
+      <div class="row">
+        <div class="col-md-6">{{ field(form.username, label='Username') }}</div>
+        <div class="col-md-6">{{ field(form.email, label='Email') }}</div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">{{ field(form.first_name, label='First Name') }}</div>
+        <div class="col-md-6">{{ field(form.last_name, label='Last Name') }}</div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">{{ field(form.password, label='Password') }}</div>
+        <div class="col-md-6 mb-3">
+          {{ form.role.label(class="form-label dd-form-label") }}
+          {{ form.role(class="form-select dd-input", id="createRole") }}
         </div>
-        <div class="card-body">
-            <form method="POST" action="{{ url_for('admin.create_user') }}">
-                {{ form.hidden_tag() }}
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        {{ form.username.label(class="form-label") }}
-                        {{ form.username(class="form-control") }}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        {{ form.email.label(class="form-label") }}
-                        {{ form.email(class="form-control") }}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        {{ form.first_name.label(class="form-label") }}
-                        {{ form.first_name(class="form-control") }}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        {{ form.last_name.label(class="form-label") }}
-                        {{ form.last_name(class="form-control") }}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        {{ form.password.label(class="form-label") }}
-                        {{ form.password(class="form-control") }}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        {{ form.role.label(class="form-label") }}
-                        {{ form.role(class="form-select", id="createRole") }}
-                    </div>
-                </div>
+      </div>
 
-                <!-- School/District fields (shown for teachers and observers) -->
-                <div class="row create-school-district-fields" style="display: none;">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">School</label>
-                        <select class="form-select" name="school_id">
-                            <option value="">Select School</option>
-                            {% for school in schools %}
-                            <option value="{{ school.id }}">{{ school.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text">Or enter school name below if not in list</div>
-                        <input type="text" class="form-control mt-1" name="school" placeholder="School name">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">District</label>
-                        <select class="form-select" name="district_id">
-                            <option value="">Select District</option>
-                            {% for district in districts %}
-                            <option value="{{ district.id }}">{{ district.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text">Or enter district name below if not in list</div>
-                        <input type="text" class="form-control mt-1" name="district" placeholder="District name">
-                    </div>
-                </div>
-
-                {{ form.submit(class="btn btn-primary") }}
-            </form>
-        </div>
-    </div>
-    {% endif %}
-
-    <div class="card">
-        <div class="card-header">
-            <h3>User List</h3>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Name</th>
-                            <th>Role</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        <tr>
-                            <td>{{ user.username }}</td>
-                            <td>{{ user.email }}</td>
-                            <td>{{ user.first_name }} {{ user.last_name }}</td>
-                            <td><span class="badge bg-secondary">{{ user.role.value }}</span></td>
-                            <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-outline-primary edit-user" data-user-id="{{ user.id }}">Edit</button>
-                                    {% if current_user.is_admin() %}
-                                    <button class="btn btn-outline-danger delete-user" data-user-id="{{ user.id }}">Delete</button>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} mt-3">
-                    {{ message }}
-                </div>
+      <!-- School/District fields (shown for teachers and observers) -->
+      <div class="row create-school-district-fields" style="display: none;">
+        <div class="col-md-6 mb-3">
+          <label class="form-label dd-form-label">School</label>
+          <select class="form-select dd-input" name="school_id">
+            <option value="">Select School</option>
+            {% for school in schools %}
+            <option value="{{ school.id }}">{{ school.name }}</option>
             {% endfor %}
-        {% endif %}
-    {% endwith %}
+          </select>
+          <div class="form-text">Or enter school name below if not in list</div>
+          <input type="text" class="form-control dd-input mt-1" name="school" placeholder="School name">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label dd-form-label">District</label>
+          <select class="form-select dd-input" name="district_id">
+            <option value="">Select District</option>
+            {% for district in districts %}
+            <option value="{{ district.id }}">{{ district.name }}</option>
+            {% endfor %}
+          </select>
+          <div class="form-text">Or enter district name below if not in list</div>
+          <input type="text" class="form-control dd-input mt-1" name="district" placeholder="District name">
+        </div>
+      </div>
+
+      <button class="btn dd-btn-primary" type="submit">Create User</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <div class="dd-card p-3">
+    <h3 class="mb-3">User List</h3>
+    <div class="table-responsive">
+      <table class="table dd-table">
+        <thead>
+          <tr>
+            <th>Username</th><th>Email</th><th>Name</th><th>Role</th><th>Created</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.first_name }} {{ user.last_name }}</td>
+            <td><span class="dd-badge">{{ user.role.value }}</span></td>
+            <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary edit-user" data-user-id="{{ user.id }}">Edit</button>
+                {% if current_user.is_admin() %}
+                <button class="btn btn-outline-danger delete-user" data-user-id="{{ user.id }}">Delete</button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {{ flash_messages() }}
 </div>
 
 <!-- Edit User Modal -->

@@ -1,0 +1,19 @@
+{% macro banner(kind='info', text='') -%}
+  {% set cls = 'info' %}
+  {% if kind in ['success','error','info'] %}{% set cls = kind %}{% endif %}
+  <div class="dd-alert {{ cls }}">{{ text }}</div>
+{%- endmacro %}
+
+{% macro flash_messages() -%}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="mt-3">
+        {% for category, message in messages %}
+          {% set kind = 'info' %}
+          {% if category in ['success','error','info'] %}{% set kind = category %}{% endif %}
+          <div class="dd-alert {{ kind }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+{%- endmacro %}

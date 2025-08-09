@@ -1,0 +1,7 @@
+{% macro primary(text, type='submit', classes='') -%}
+  <button type="{{ type }}" class="btn dd-btn-primary {{ classes }}">{{ text }}</button>
+{%- endmacro %}
+
+{% macro link(text, href='#', classes='') -%}
+  <a href="{{ href }}" class="btn btn-link {{ classes }}">{{ text }}</a>
+{%- endmacro %}

@@ -3,102 +3,75 @@
 {% block title %}Start New Session{% endblock %}
 
 {% block content %}
+{% from '_components/forms.html' import field %}
+{% from '_components/alerts.html' import banner %}
+
 <div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="mb-0">
-                        <i class="fas fa-play-circle"></i> Start New Session
-                    </h3>
-                </div>
-                <div class="card-body">
-                    {% if existing_session %}
-                    <div class="alert alert-warning">
-                        <h5><i class="fas fa-exclamation-triangle"></i> Section Conflict Detected</h5>
-                        <p>You already have an active session for Section {{ form.section.data }}:</p>
-                        <div class="card mt-2 mb-3">
-                            <div class="card-body py-2">
-                                <strong>{{ existing_session.name }}</strong><br>
-                                <small class="text-muted">
-                                    {{ existing_session.module.display_name }} •
-                                    Created {{ existing_session.created_at.strftime('%B %d, %Y at %I:%M %p') }}
-                                </small>
-                            </div>
-                        </div>
-                        <p class="mb-2">Choose an option:</p>
-                    </div>
-                    {% endif %}
-
-                    <form method="POST" id="sessionForm">
-                        {{ form.hidden_tag() }}
-
-                        <div class="row">
-                            <div class="col-md-8 mb-3">
-                                {{ form.name.label(class="form-label") }}
-                                {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
-                                {% for error in form.name.errors %}
-                                    <div class="invalid-feedback">{{ error }}</div>
-                                {% endfor %}
-                                <div class="form-text">Give your session a descriptive name</div>
-                            </div>
-
-                            <div class="col-md-4 mb-3">
-                                {{ form.section.label(class="form-label") }}
-                                {{ form.section(class="form-control" + (" is-invalid" if form.section.errors else ""), id="sectionInput") }}
-                                {% for error in form.section.errors %}
-                                    <div class="invalid-feedback">{{ error }}</div>
-                                {% endfor %}
-                                <div class="form-text">Hour/Period (1-12)</div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                {{ form.module.label(class="form-label") }}
-                                {{ form.module(class="form-select" + (" is-invalid" if form.module.errors else "")) }}
-                                {% for error in form.module.errors %}
-                                    <div class="invalid-feedback">{{ error }}</div>
-                                {% endfor %}
-                                <div class="form-text">Choose the curriculum module</div>
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                {{ form.character_set.label(class="form-label") }}
-                                {{ form.character_set(class="form-select" + (" is-invalid" if form.character_set.errors else "")) }}
-                                {% for error in form.character_set.errors %}
-                                    <div class="invalid-feedback">{{ error }}</div>
-                                {% endfor %}
-                                <div class="form-text">Theme for student character names</div>
-                            </div>
-                        </div>
-
-                        <div class="d-grid gap-2 mt-4">
-                            {% if existing_session %}
-                                <div class="btn-group" role="group">
-                                    {{ form.archive_and_create(class="btn btn-warning btn-lg") }}
-                                    <a href="{{ url_for('sessions.list_sessions') }}" class="btn btn-secondary btn-lg">Cancel</a>
-                                </div>
-                                <small class="text-muted text-center mt-2">
-                                    "Archive Existing & Start New" will save your current session and create this new one.
-                                </small>
-                            {% else %}
-                                {{ form.submit(class="btn btn-primary btn-lg") }}
-                            {% endif %}
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <div class="mt-3">
-                <small class="text-muted">
-                    <i class="fas fa-info-circle"></i>
-                    Creating a session will generate 20 students with unique PINs.
-                    You can view and print PIN cards after creation.
-                </small>
-            </div>
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="dd-card">
+        <div class="p-3" style="border-bottom:1px solid var(--color-border);">
+          <h3 class="mb-0"><i class="fas fa-play-circle"></i> Start New Session</h3>
         </div>
+        <div class="p-3">
+          {% if existing_session %}
+            {{ banner('warning', 'Section conflict detected. You already have an active session for this section.') }}
+            <div class="dd-card mt-2 mb-3">
+              <div class="p-2">
+                <strong>{{ existing_session.name }}</strong><br>
+                <small class="text-muted">{{ existing_session.module.display_name }} • Created {{ existing_session.created_at.strftime('%B %d, %Y at %I:%M %p') }}</small>
+              </div>
+            </div>
+            <p class="mb-2">Choose an option:</p>
+          {% endif %}
+
+          <form method="POST" id="sessionForm">
+            {{ form.hidden_tag() }}
+            <div class="row">
+              <div class="col-md-8">{{ field(form.name, label='Session name') }}<div class="form-text">Give your session a descriptive name</div></div>
+              <div class="col-md-4 mb-3">
+                {{ form.section.label(class="form-label dd-form-label") }}
+                {{ form.section(class="form-control dd-input" + (" is-invalid" if form.section.errors else ""), id="sectionInput") }}
+                {% for error in form.section.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                <div class="form-text">Hour/Period (1-12)</div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ form.module.label(class="form-label dd-form-label") }}
+                {{ form.module(class="form-select dd-input" + (" is-invalid" if form.module.errors else "")) }}
+                {% for error in form.module.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                <div class="form-text">Choose the curriculum module</div>
+              </div>
+              <div class="col-md-6 mb-3">
+                {{ form.character_set.label(class="form-label dd-form-label") }}
+                {{ form.character_set(class="form-select dd-input" + (" is-invalid" if form.character_set.errors else "")) }}
+                {% for error in form.character_set.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                <div class="form-text">Theme for student character names</div>
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+              {% if existing_session %}
+                <div class="btn-group" role="group">
+                  {{ form.archive_and_create(class="btn btn-warning btn-lg") }}
+                  <a href="{{ url_for('sessions.list_sessions') }}" class="btn btn-secondary btn-lg">Cancel</a>
+                </div>
+                <small class="text-muted text-center mt-2">"Archive Existing & Start New" will save your current session and create this new one.</small>
+              {% else %}
+                {{ form.submit(class="btn btn-primary btn-lg") }}
+              {% endif %}
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <small class="text-muted"><i class="fas fa-info-circle"></i> Creating a session will generate 20 students with unique PINs. You can view and print PIN cards after creation.</small>
+      </div>
     </div>
+  </div>
 </div>
 
 <!-- Conflict checking (optional enhancement) -->

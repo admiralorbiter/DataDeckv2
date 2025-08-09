@@ -1,39 +1,110 @@
-<nav class="navbar navbar-expand-lg custom-nav">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="/">Data Deck</a>
+<nav class="dd-navbar">
+  <div class="container-fluid dd-nav-container">
+    <!-- Row 1: Logo only -->
+    <div class="d-flex align-items-center py-2">
+      <a class="navbar-brand" href="/" aria-label="Home">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="DataDeck logo" class="dd-logo"/>
+      </a>
+    </div>
+
+    <!-- Row 2: Nav items -->
+    <div class="navbar navbar-expand-lg w-100 p-0">
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
+      <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+        <ul class="navbar-nav mx-auto">
           {% if current_user.is_authenticated %}
-            {% if current_user.is_teacher() or current_user.is_admin() or current_user.is_staff() %}
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('sessions.list_sessions') }}">Sessions</a>
+            <!-- Role-based session navigation -->
+            {% if nav_sessions.type == 'teacher' and nav_sessions.data %}
+              <!-- Teacher: Dropdown with their active sessions -->
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle dd-tab {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}" href="#" id="teacherSessionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  My Sessions ({{ nav_sessions.data|length }})
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="teacherSessionsDropdown">
+                  {% for session in nav_sessions.data %}
+                    <li><a class="dropdown-item" href="{{ url_for('sessions.session_detail', session_id=session.id) }}">
+                      <strong>{{ session.name }}</strong><br>
+                      <small class="text-muted">Section {{ session.section }} • {{ session.module.name if session.module else 'No Module' }}</small>
+                    </a></li>
+                  {% endfor %}
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="{{ url_for('sessions.list_sessions') }}">View All Sessions</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('sessions.start_session') }}">Start New Session</a></li>
+                </ul>
               </li>
+            {% elif nav_sessions.type == 'observer' and nav_sessions.data %}
+              <!-- Observer: Dropdown with sessions from their district/school -->
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle dd-tab {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}" href="#" id="observerSessionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  District Sessions ({{ nav_sessions.data|length }})
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="observerSessionsDropdown">
+                  {% for session in nav_sessions.data %}
+                    <li><a class="dropdown-item" href="{{ url_for('sessions.session_detail', session_id=session.id) }}">
+                      <strong>{{ session.name }}</strong><br>
+                      <small class="text-muted">{{ session.created_by.first_name }} {{ session.created_by.last_name }} • Section {{ session.section }}</small>
+                    </a></li>
+                  {% endfor %}
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="{{ url_for('sessions.list_sessions') }}">View All Sessions</a></li>
+                </ul>
+              </li>
+            {% elif nav_sessions.type == 'admin' and nav_sessions.data %}
+              <!-- Admin: Dropdown with sessions grouped by district/school -->
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle dd-tab {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}" href="#" id="adminSessionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  All Sessions
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="adminSessionsDropdown">
+                  {% for district_name, schools in nav_sessions.data.items() %}
+                    <li><h6 class="dropdown-header">{{ district_name }}</h6></li>
+                    {% for school_name, sessions in schools.items() %}
+                      <li><span class="dropdown-item-text"><strong>{{ school_name }}</strong></span></li>
+                      {% for session in sessions[:3] %}
+                        <li><a class="dropdown-item ps-4" href="{{ url_for('sessions.session_detail', session_id=session.id) }}">
+                          {{ session.name }} ({{ session.created_by.first_name }} {{ session.created_by.last_name }})
+                        </a></li>
+                      {% endfor %}
+                      {% if sessions|length > 3 %}
+                        <li><span class="dropdown-item-text ps-4"><small class="text-muted">+ {{ sessions|length - 3 }} more...</small></span></li>
+                      {% endif %}
+                    {% endfor %}
+                    {% if not loop.last %}<li><hr class="dropdown-divider"></li>{% endif %}
+                  {% endfor %}
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="{{ url_for('sessions.list_sessions') }}">View All Sessions</a></li>
+                </ul>
+              </li>
+            {% else %}
+              <!-- Fallback: Regular Sessions link for admin/staff without specific sessions -->
+              {% if current_user.is_teacher() or current_user.is_admin() or current_user.is_staff() %}
+              <li class="nav-item"><a class="nav-link dd-tab {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}" href="{{ url_for('sessions.list_sessions') }}">Sessions</a></li>
+              {% endif %}
             {% endif %}
+
             {% if current_user.is_admin() or current_user.is_staff() %}
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('admin.admin_dashboard') }}">Admin</a>
-              </li>
+            <li class="nav-item"><a class="nav-link dd-tab {% if request.endpoint=='admin.admin_dashboard' %}active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}">Admin</a></li>
             {% endif %}
             {% if current_user.is_observer() %}
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('main.observer_dashboard') }}">Observer Dashboard</a>
-              </li>
+            <li class="nav-item"><a class="nav-link dd-tab {% if request.endpoint=='main.observer_dashboard' %}active{% endif %}" href="{{ url_for('main.observer_dashboard') }}">Observer Dashboard</a></li>
             {% endif %}
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('profile.profile') }}">Profile</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
-            </li>
+            <li class="nav-item"><a class="nav-link dd-tab {% if request.endpoint=='profile.profile' %}active{% endif %}" href="{{ url_for('profile.profile') }}">Profile</a></li>
+            <li class="nav-item"><a class="nav-link dd-tab" href="{{ url_for('auth.logout') }}">Logout</a></li>
+          {% elif session.get('student_id') %}
+            <!-- Student session: Show link to their current session -->
+            {% if nav_sessions.type == 'student' and nav_sessions.data %}
+              <li class="nav-item"><a class="nav-link dd-tab {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}" href="{{ url_for('sessions.session_detail', session_id=nav_sessions.data.id) }}">My Session</a></li>
+            {% endif %}
+            <li class="nav-item"><a class="nav-link dd-tab" href="{{ url_for('main.student_logout') }}">Student Logout</a></li>
           {% else %}
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
-            </li>
+            <!-- Logged-out view: show Student Login and Teacher/Admin Login -->
+            <li class="nav-item"><a class="nav-link dd-tab {% if request.endpoint=='main.student_login' %}active{% endif %}" href="{{ url_for('main.student_login') }}">Student Login</a></li>
+            <li class="nav-item"><a class="nav-link dd-tab {% if request.endpoint and request.endpoint.startswith('auth.') %}active{% endif %}" href="{{ url_for('auth.login') }}">Teacher/Admin Login</a></li>
           {% endif %}
         </ul>
       </div>
     </div>
-  </nav>
+  </div>
+</nav>
