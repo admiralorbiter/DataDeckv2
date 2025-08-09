@@ -46,9 +46,36 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         {{ form.role.label(class="form-label") }}
-                        {{ form.role(class="form-select") }}
+                        {{ form.role(class="form-select", id="createRole") }}
                     </div>
                 </div>
+
+                <!-- School/District fields (shown for teachers and observers) -->
+                <div class="row create-school-district-fields" style="display: none;">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">School</label>
+                        <select class="form-select" name="school_id">
+                            <option value="">Select School</option>
+                            {% for school in schools %}
+                            <option value="{{ school.id }}">{{ school.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Or enter school name below if not in list</div>
+                        <input type="text" class="form-control mt-1" name="school" placeholder="School name">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">District</label>
+                        <select class="form-select" name="district_id">
+                            <option value="">Select District</option>
+                            {% for district in districts %}
+                            <option value="{{ district.id }}">{{ district.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Or enter district name below if not in list</div>
+                        <input type="text" class="form-control mt-1" name="district" placeholder="District name">
+                    </div>
+                </div>
+
                 {{ form.submit(class="btn btn-primary") }}
             </form>
         </div>
@@ -179,6 +206,18 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Show/hide school/district fields for create form based on role
+    const createRole = document.getElementById('createRole');
+    const createSchoolDistrictFields = document.querySelector('.create-school-district-fields');
+
+    function toggleCreateSchoolDistrictFields() {
+        const requiresSchool = ['teacher', 'observer'].includes(createRole.value);
+        createSchoolDistrictFields.style.display = requiresSchool ? 'block' : 'none';
+    }
+
+    createRole.addEventListener('change', toggleCreateSchoolDistrictFields);
+    // Check initial state
+    toggleCreateSchoolDistrictFields();
     // Edit User
     const editButtons = document.querySelectorAll('.edit-user');
     editButtons.forEach(button => {

@@ -9,27 +9,27 @@ This WBS breaks the rewrite into epics → stories → granular subtasks with ac
     - Load `.env` via python-dotenv
   - AC: `flask run` boots; toggling config flags changes behavior (DEBUG, DB URL)
 - Story 1.2: Extensions wiring
-  - Subtasks: SQLAlchemy, Alembic, Flask-Login, Flask-WTF, CSRF, Celery/RQ
-  - AC: `alembic revision --autogenerate && alembic upgrade head` succeeds
+  - Subtasks: SQLAlchemy, Flask-Login, Flask-WTF, CSRF, Celery/RQ
+  - AC: Extensions initialize properly; `db.create_all()` creates schema
 - Story 1.3: Repo hygiene & CI
   - Subtasks: black/isort/flake8, pre-commit, pytest + coverage, Makefile
   - AC: `pytest` green; coverage ≥ 80%; pre-commit passes on clean repo
 
-### Epic 2: Data Model & Migrations
+### Epic 2: Data Model & Schema
 - Story 2.1: Implement models
   - Subtasks: District, User, Observer, Session, Student, Media, Comment, StudentMediaInteraction
-  - AC: Migrations apply; uniqueness/indexes enforced
+  - AC: Schema creates via `db.create_all()`; uniqueness/indexes enforced
 - Story 2.2: Seed & fixtures
   - Subtasks: Dev seed CLI; pytest factories
   - AC: Seed creates teacher+district+session; factories generate valid entities
 
 ### Epic 3: Authentication & Roles
-- Story 3.1: Teacher/Admin login/logout
-  - Subtasks: routes, forms, templates, password hashing, role checks
-  - AC: Valid login redirects to dashboard; invalid shows error
-- Story 3.2: Observer login/logout (separate)
-  - Subtasks: distinct blueprint, decorator `@observer_required`
-  - AC: Observer-only routes blocked for non-observers
+- Story 3.1: Unified login/logout
+  - Subtasks: routes, forms, templates, password hashing, role checks, observer session handling
+  - AC: Valid login redirects to appropriate dashboard; invalid shows error; observers get session-based auth
+- Story 3.2: Role-based access control
+  - Subtasks: decorators `@observer_required`, `@admin_required`, role checks
+  - AC: Protected routes blocked for unauthorized users
 - Story 3.3: Student PIN session
   - Subtasks: PIN form; session store `student_id`; security notes
   - AC: Valid PIN redirects to session; invalid shows error; no Flask-Login user required

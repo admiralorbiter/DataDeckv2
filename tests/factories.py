@@ -7,6 +7,7 @@ from models import (
     Comment,
     District,
     Media,
+    Module,
     Session,
     Student,
     StudentMediaInteraction,
@@ -61,7 +62,7 @@ def create_session(teacher: User, section: int = 1) -> Session:
         name=f"Hour {section}",
         session_code=rand_code(8),
         section=section,
-        module="2",
+        module=Module.MODULE_2,
         created_by_id=teacher.id,
         character_set="animals",
     )

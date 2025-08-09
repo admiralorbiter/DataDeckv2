@@ -14,7 +14,7 @@ This document describes account types in DataDeck v2, how they authenticate, wha
   - Auth: Email + password via teacher/admin login
   - Access: Their own sessions, students, media; can start sessions and generate students
 - Observer
-  - Auth: Email + password via observer login (`/observer/login`); session stored under `observer_id`
+  - Auth: Email + password via unified login (`/login`); session stored under `observer_id`
   - Access: Read-only views for their district: observer dashboard and drill-down by school to see teachers
 - Student
   - Auth: PIN-based login (session-only `student_id`), not Flask-Login; used to upload/react/comment
@@ -37,6 +37,7 @@ This document describes account types in DataDeck v2, how they authenticate, wha
 
 ## Notes
 
-- Teacher/Admin login uses email+password (with backward-compatible username fallback for tests).
-- Observer auth uses a separate session namespace and decorators (`@observer_required`).
+- All users (Admin/Staff/Teacher/Observer) authenticate via unified login at `/login` using email+password (with backward-compatible username fallback for tests).
+- Observer auth uses a separate session namespace (`observer_id`) and decorators (`@observer_required`), while others use Flask-Login.
 - Student routes are protected with `@student_required` leveraging session `student_id`.
+- Legacy observer routes (`/observer/login`, `/observer/logout`) redirect to the unified endpoints.

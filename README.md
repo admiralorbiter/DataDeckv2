@@ -61,7 +61,7 @@ pip install -r requirements.txt
   - `DATABASE_URL=postgresql://user:pass@localhost:5432/datadeck` (optional; defaults to local SQLite in dev)
 
 4) Initialize the database
-- The starter uses `db.create_all()` on startup. Simply run the app once to create tables. Migrations (Alembic) are optional and not required for now.
+- The app uses `db.create_all()` on startup. Simply run the app once to create tables automatically.
 
 5) Run the app
 ```bash
@@ -114,7 +114,7 @@ Flake8 uses `max-line-length=88` (Black-compatible) as configured in `.flake8`.
 - High-level scope and decisions live in the docs above.
 
 ## Notes
-- Migrations: Alembic is planned; the starter uses `db.create_all()` temporarily. See `docs/FLASK_REWRITE_PLAN.md` and `docs/WBS.md` (Epic 1/2) for migration setup tasks.
+- Database: Schema is managed via `db.create_all()` for simplicity. Tables are created automatically on app startup.
 - Storage: local filesystem in dev; S3-compatible storage planned for prod.
 
 ## License

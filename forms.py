@@ -1,7 +1,8 @@
 from flask_wtf import FlaskForm
-from wtforms import PasswordField, SelectField, StringField, SubmitField
-from wtforms.validators import DataRequired, Email, EqualTo
+from wtforms import IntegerField, PasswordField, SelectField, StringField, SubmitField
+from wtforms.validators import DataRequired, Email, EqualTo, NumberRange
 
+from models.session import Module
 from models.user import User
 
 
@@ -55,3 +56,37 @@ class PasswordChangeForm(FlaskForm):
         ],
     )
     submit = SubmitField("Change Password")
+
+
+class StartSessionForm(FlaskForm):
+    name = StringField(
+        "Session Name",
+        validators=[DataRequired()],
+        render_kw={"placeholder": "e.g., Period 3 - Data Analysis"},
+    )
+    section = IntegerField(
+        "Section/Period",
+        validators=[
+            DataRequired(),
+            NumberRange(min=1, max=12, message="Section must be between 1 and 12"),
+        ],
+        render_kw={"placeholder": "e.g., 3"},
+    )
+    module = SelectField(
+        "Module",
+        validators=[DataRequired()],
+        choices=[(mod.value, mod.display_name) for mod in Module],
+    )
+    character_set = SelectField(
+        "Character Set",
+        validators=[DataRequired()],
+        choices=[
+            ("animals", "Animals"),
+            ("superheroes", "Superheroes"),
+            ("fantasy", "Fantasy Characters"),
+            ("space", "Space Explorers"),
+        ],
+        default="animals",
+    )
+    submit = SubmitField("Start Session")
+    archive_and_create = SubmitField("Archive Existing & Start New")

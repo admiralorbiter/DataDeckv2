@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}{{ session.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Session Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center mb-2">
+                <a href="{{ url_for('sessions.list_sessions') }}" class="btn btn-outline-secondary me-3">
+                    <i class="fas fa-arrow-left"></i> Back to Sessions
+                </a>
+                <div>
+                    <h2 class="mb-0">{{ session.name }}</h2>
+                    <small class="text-muted">
+                        Section {{ session.section }} • {{ session.module.display_name }} •
+                        Code: <code>{{ session.session_code }}</code>
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if session.is_archived %}
+                <span class="badge bg-secondary fs-6">Archived</span>
+            {% elif session.is_paused %}
+                <span class="badge bg-warning fs-6">Paused</span>
+            {% else %}
+                <span class="badge bg-success fs-6">Active</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Session Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ students|length }}</h3>
+                    <p class="mb-0">Students</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-success">{{ media|length }}</h3>
+                    <p class="mb-0">Media Uploads</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-info">{{ session.character_set|title }}</h3>
+                    <p class="mb-0">Character Theme</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    {% if current_user.is_teacher() and session.created_by_id == current_user.id or current_user.is_admin() or current_user.is_staff() %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-primary" onclick="showStudentPins()">
+                    <i class="fas fa-id-card"></i> View Student PINs
+                </button>
+                <button class="btn btn-outline-success" disabled>
+                    <i class="fas fa-upload"></i> Upload Media (Coming Soon)
+                </button>
+                {% if not session.is_archived %}
+                    <form method="POST" action="{{ url_for('sessions.archive_session', session_id=session.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-outline-secondary"
+                                onclick="return confirm('Archive this session? Students will no longer be able to access it.')">
+                            <i class="fas fa-archive"></i> Archive Session
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Students Section -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-users"></i> Students</h5>
+                </div>
+                <div class="card-body">
+                    {% if students %}
+                        <div class="row">
+                            {% for student in students %}
+                            <div class="col-sm-6 mb-2">
+                                <div class="card card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ student.character_name }}</strong><br>
+                                            <small class="text-muted">{{ student.username }}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <small class="text-muted">PIN: <code class="student-pin" style="display: none;">****</code></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No students generated yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Media Section -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-images"></i> Recent Media</h5>
+                </div>
+                <div class="card-body">
+                    {% if media %}
+                        {% for item in media %}
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <h6 class="mb-1">{{ item.title }}</h6>
+                                <small class="text-muted">
+                                    {% if item.student %}
+                                        by {{ item.student.character_name }}
+                                    {% else %}
+                                        by Teacher
+                                    {% endif %}
+                                    • {{ item.uploaded_at.strftime('%b %d at %I:%M %p') }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% if media|length == 50 %}
+                            <small class="text-muted">Showing latest 50 uploads...</small>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted">No media uploads yet. Students can upload once the session is active.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Student PINs Modal -->
+<div class="modal fade" id="studentPinsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Student Login PINs</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <strong>Instructions:</strong> Give each student their character name and PIN to log in.
+                </div>
+                <div class="row" id="pinsList">
+                    <!-- PINs will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="printPins()">
+                    <i class="fas fa-print"></i> Print PINs
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showStudentPins() {
+    // In a real implementation, you'd fetch the actual PINs from the server
+    // For now, we'll show placeholder PINs
+    const pinsList = document.getElementById('pinsList');
+    pinsList.innerHTML = '';
+
+    {% for student in students %}
+    const studentDiv = document.createElement('div');
+    studentDiv.className = 'col-md-6 mb-3';
+    studentDiv.innerHTML = `
+        <div class="card">
+            <div class="card-body text-center">
+                <h6>{{ student.character_name }}</h6>
+                <p class="mb-0"><strong>PIN: <span class="text-primary">****</span></strong></p>
+                <small class="text-muted">{{ student.username }}</small>
+            </div>
+        </div>
+    `;
+    pinsList.appendChild(studentDiv);
+    {% endfor %}
+
+    new bootstrap.Modal(document.getElementById('studentPinsModal')).show();
+}
+
+function printPins() {
+    window.print();
+}
+</script>
+{% endblock %}

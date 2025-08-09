@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Start New Session{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-play-circle"></i> Start New Session
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if existing_session %}
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Section Conflict Detected</h5>
+                        <p>You already have an active session for Section {{ form.section.data }}:</p>
+                        <div class="card mt-2 mb-3">
+                            <div class="card-body py-2">
+                                <strong>{{ existing_session.name }}</strong><br>
+                                <small class="text-muted">
+                                    {{ existing_session.module.display_name }} •
+                                    Created {{ existing_session.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                </small>
+                            </div>
+                        </div>
+                        <p class="mb-2">Choose an option:</p>
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" id="sessionForm">
+                        {{ form.hidden_tag() }}
+
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                {{ form.name.label(class="form-label") }}
+                                {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                                {% for error in form.name.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">Give your session a descriptive name</div>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                {{ form.section.label(class="form-label") }}
+                                {{ form.section(class="form-control" + (" is-invalid" if form.section.errors else ""), id="sectionInput") }}
+                                {% for error in form.section.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">Hour/Period (1-12)</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.module.label(class="form-label") }}
+                                {{ form.module(class="form-select" + (" is-invalid" if form.module.errors else "")) }}
+                                {% for error in form.module.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">Choose the curriculum module</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                {{ form.character_set.label(class="form-label") }}
+                                {{ form.character_set(class="form-select" + (" is-invalid" if form.character_set.errors else "")) }}
+                                {% for error in form.character_set.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">Theme for student character names</div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            {% if existing_session %}
+                                <div class="btn-group" role="group">
+                                    {{ form.archive_and_create(class="btn btn-warning btn-lg") }}
+                                    <a href="{{ url_for('sessions.list_sessions') }}" class="btn btn-secondary btn-lg">Cancel</a>
+                                </div>
+                                <small class="text-muted text-center mt-2">
+                                    "Archive Existing & Start New" will save your current session and create this new one.
+                                </small>
+                            {% else %}
+                                {{ form.submit(class="btn btn-primary btn-lg") }}
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle"></i>
+                    Creating a session will generate 20 students with unique PINs.
+                    You can view and print PIN cards after creation.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Conflict checking (optional enhancement) -->
+<div id="conflictAlert" class="alert alert-warning mt-3" style="display: none;">
+    <strong>Section Conflict:</strong> <span id="conflictMessage"></span>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sectionInput = document.getElementById('sectionInput');
+    const conflictAlert = document.getElementById('conflictAlert');
+    const conflictMessage = document.getElementById('conflictMessage');
+
+    let debounceTimer;
+
+    // Optional: Real-time conflict checking as user types
+    sectionInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(checkSectionConflict, 500);
+    });
+
+    function checkSectionConflict() {
+        const section = sectionInput.value;
+        if (!section || section < 1 || section > 12) {
+            conflictAlert.style.display = 'none';
+            return;
+        }
+
+        fetch(`/api/sessions/check-section?section=${section}`)
+            .then(response => response.json())
+            .then(data => {
+                if (!data.available && data.conflict) {
+                    conflictMessage.textContent = `You have an active session "${data.conflict.name}" (${data.conflict.module}) for this section.`;
+                    conflictAlert.style.display = 'block';
+                } else {
+                    conflictAlert.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.log('Conflict check failed:', error);
+                conflictAlert.style.display = 'none';
+            });
+    }
+});
+</script>
+{% endblock %}

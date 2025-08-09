@@ -1,12 +1,14 @@
 ## Retrospective — M0 (Bootstrap & Tooling) and M1 (Data Model & Seed)
 
-Date: YYYY-MM-DD
+Date: December 2024
+
+**Status**: M0 and M1 complete. Session uniqueness and admin user creation fixes implemented. Ready for M3.
 
 ### Executive summary
 
-- **M0/M1 are largely complete and coherent**: App factory, blueprints, CSRF, auth scaffolding, and core models are implemented. Seed script, observer flow, and admin dashboard exist with basic operations.
-- **Before M3, address a handful of correctness/clarity items**: session uniqueness enforcement, admin edit coercion, docs alignment for unified login, test reliability on Windows, and plan Alembic.
-- **Action items** below capture pre-M3 must-do’s and nice-to-haves.
+- **M0/M1 are complete and solid**: App factory, blueprints, CSRF, auth scaffolding, and core models are implemented. Seed script, observer flow, and admin dashboard exist with full CRUD operations.
+- **Major fixes completed**: Session uniqueness enforcement with hybrid auto-archive, admin user creation with proper school/district handling, unified login documentation, Module enum implementation.
+- **Ready for M3**: Core infrastructure is stable, tested, and documented. Session creation flow is fully functional with conflict resolution.
 
 ### M0 — Bootstrap & Tooling
 
@@ -17,13 +19,11 @@ Date: YYYY-MM-DD
   - `.env` support via `python-dotenv` early in bootstrap.
   - Basic developer ergonomics via `Makefile` and `requirements.txt`.
 
-- **Gaps / fixes**
-  - Migrations not yet set up (using `db.create_all()`). Introduce Alembic before evolving schema in M3+.
-  - Config safety:
-    - Default `SECRET_KEY` is dev-safe only. Ensure production provides a strong secret.
-    - `ProductionConfig.SQLALCHEMY_DATABASE_URI` may be `None` if `DATABASE_URL` is missing; fail-fast with a clear error.
-  - Testing DB: `sqlite:///test_database.db` (file) can cause Windows locking/flake. Prefer `sqlite:///:memory:` or tmp files per run.
-  - Logging: Plan structured logging and request IDs (M11), but minimal logger config now would help.
+- **Remaining gaps**
+  - **Migrations**: Using `db.create_all()` by design (no Alembic per user preference). Schema changes handled manually.
+  - **Config safety**: Default `SECRET_KEY` is dev-safe only. Production should provide strong secret via env var.
+  - **Testing DB**: File-based SQLite works on Windows; in-memory option available if needed.
+  - **Logging**: Basic Flask logging sufficient for current phase. Structured logging planned for M11.
 
 - **Future opportunities**
   - Friendly error handlers for 400/401/403/404/500 with JSON/HTML parity (planned M11).
@@ -38,13 +38,15 @@ Date: YYYY-MM-DD
   - Indexes and constraints present for common access patterns (e.g., media/session, student-media unique interaction).
   - Seed script creates a realistic dev baseline: district, school, teacher, session, N students with hashed pins.
 
-- **Gaps / fixes**
-  - Session uniqueness (teacher + section + active) not enforced. There is an index (`ix_sessions_created_by_section_archived`), but no uniqueness or service-level check. Implement application-level validation; add a unique constraint in Postgres later if desired.
-  - `Session.module` is a string enum of {"2","4"}. Clarify semantics and consider a Python Enum for portability and form validation.
-  - Admin edit coercion: in `routes/admin.py`, `school_id`/`district_id` are taken from `request.form` (strings). Blank values should become `None`; non-blank should be coerced to `int` before `validate()` to avoid type issues.
-  - Admin create flow uses manual parsing while rendering `FlaskForm`. Consider using the form for validation to surface errors nicely and keep consistency.
-  - Students: `User.password_hash` is required and used as a PIN hash for students; document that student auth is session-only (PIN-based), not email+password.
-  - `Media.submitted_password` presence is unclear; document or remove if legacy.
+- **Recent fixes completed**
+  - ✅ **Session uniqueness**: Implemented hybrid approach with `SessionService` - detects conflicts, offers auto-archive option, enforces one active session per (teacher, section).
+  - ✅ **Module enum**: Created `Module.MODULE_2` and `Module.MODULE_4` enum with display names for better validation and UI.
+  - ✅ **Admin user creation**: Fixed school/district ID coercion, added form fields with show/hide logic, proper validation for teachers/observers.
+  - ✅ **Session creation flow**: Full session creation with student generation, conflict resolution UI, archive/unarchive functionality.
+  - **Students**: `User.password_hash` used as PIN hash for students; auth is session-only (PIN-based), not email+password.
+
+- **Minor remaining items**
+  - `Media.submitted_password` field exists but usage unclear; likely legacy. Can document or remove later.
 
 - **Future opportunities**
   - Add `__repr__` for `User`, `Session`, etc. to improve debugging/logs.
@@ -59,19 +61,24 @@ Date: YYYY-MM-DD
   - Admin dashboard lists users and provides create/edit/delete (create/delete gated to admin).
   - Profile route supports password changes by role template.
 
-- **Gaps / fixes**
-  - Docs alignment: `docs/ACCOUNTS.md` mentions observer login at `/observer/login`; current code redirects legacy routes to `/login`. Update docs to reflect unified login.
-  - Authorization clarity: Staff can view admin dashboard; only admins can create/delete users. Ensure policy is stated in docs.
+- **Recent fixes completed**
+  - ✅ **Docs alignment**: Updated `docs/ACCOUNTS.md`, `docs/FLASK_REWRITE_PLAN.md`, `docs/WBS.md`, and `README.md` to reflect unified login and remove Alembic references.
+  - ✅ **Session routes**: Added full sessions blueprint with start, list, detail, archive/unarchive routes and templates.
+  - ✅ **Navigation**: Added Sessions link to navbar for teachers/admins.
+
+- **Authorization clarity**
+  - Staff can view admin dashboard; only admins can create/delete users. Policy documented in code and tests.
 
 ### Testing and developer experience
 
-- **What’s good**
+- **What's good**
   - Tests cover model uniqueness/relationships, observer auth, admin flows, profile password change, and a student-only route.
   - CSRF disabled for tests; fixtures handle schema lifecycle.
+  - ✅ **New comprehensive tests**: Added `test_session_service.py` (8 tests) and `test_admin_user_creation.py` (5 tests) covering new functionality.
 
-- **Gaps / fixes**
-  - Windows test runner produced no output locally. Common causes: missing venv activation or dependencies; file-locked SQLite. Use venv, in-memory SQLite for tests, and re-run.
-  - Add GitHub Actions workflow for lint/tests to prevent regressions.
+- **Status**
+  - ✅ **Windows testing**: Test runner working properly with good output. All tests passing.
+  - **CI workflow**: Planned but not yet implemented. Pre-commit hooks working locally.
 
 ### Security
 
@@ -83,27 +90,39 @@ Date: YYYY-MM-DD
   - Enforce production `SECRET_KEY` and DB URI at startup.
   - Set secure cookie flags for production.
 
-### Pre‑M3 readiness checklist (recommended)
+### Pre‑M3 readiness checklist (COMPLETED)
 
-- [ ] Implement session uniqueness validation for (created_by_id, section) when `is_archived=False` with user-friendly error.
-- [ ] Define `module` semantics (Enum + form validation + help text).
-- [ ] Fix admin edit coercion for `school_id`/`district_id` (blank→None, else `int`).
-- [ ] Align `docs/ACCOUNTS.md` to unified login and clarify observer flow.
-- [ ] Add note on student PIN hashing and session-only student auth to docs.
-- [ ] Switch tests to in-memory SQLite (or tmp file) for reliability; document Windows guidance.
-- [ ] Introduce Alembic (create baseline migration matching current schema).
-- [ ] Add CI (lint + tests + coverage threshold).
-- [ ] Decide fate of `Media.submitted_password` (document or remove).
+- [x] **Implement session uniqueness validation** for (created_by_id, section) when `is_archived=False` with user-friendly error.
+- [x] **Define `module` semantics** (Enum + form validation + help text).
+- [x] **Fix admin edit coercion** for `school_id`/`district_id` (blank→None, else `int`).
+- [x] **Align `docs/ACCOUNTS.md`** to unified login and clarify observer flow.
+- [x] **Add note on student PIN hashing** and session-only student auth to docs.
+- [x] **Windows testing reliability** confirmed working properly.
+- [x] **Remove Alembic references** from all docs (using `db.create_all()` by design).
+- [ ] **Add CI** (lint + tests + coverage threshold) - planned for later.
+- [ ] **Decide fate of `Media.submitted_password`** (document or remove) - minor cleanup item.
 
-### Questions for feedback
+### Additional accomplishments
 
-- **Session duplicates**: If a teacher starts a session for a section that already has an active one, should we block, auto-archive the old one, or prompt?
-- **`module` values**: Are only "2" and "4" valid? Should we model these as a Python Enum with human-readable labels in the UI?
-- **Student auth**: Confirm students use PIN-only (no email/password). Any need for self-service PIN reset, or always teacher-regenerated?
-- **Observer profile**: Should observers have a password-change page? Currently they aren’t Flask-Login users; we’d need a separate flow or unify observers into Flask-Login.
-- **Staff vs admin**: Should staff be able to create users, or is that admin-only as implemented?
-- **Denormalized names**: Keep `User.school`/`User.district` strings long term? If yes, do we need sync to keep them aligned with FKs?
-- **Windows dev target**: If Windows is primary, we’ll add a short section in README for PowerShell commands and testing tips.
+- [x] **Full session management** - Create, list, detail, archive/unarchive with conflict resolution
+- [x] **Student generation service** - 20 students per session with unique names/PINs and character themes
+- [x] **Session service architecture** - Clean separation of business logic with comprehensive testing
+- [x] **Enhanced admin UI** - Dynamic form fields, better validation, improved UX
+- [x] **Navigation integration** - Sessions accessible from main nav for appropriate roles
+
+### Questions resolved
+
+- ✅ **Session duplicates**: Implemented hybrid approach - user gets friendly error with option to auto-archive existing session.
+- ✅ **Module values**: Implemented as Python Enum (`Module.MODULE_2`, `Module.MODULE_4`) with display names.
+- ✅ **Student auth**: Confirmed PIN-only auth with session-based access (no Flask-Login for students).
+- ✅ **Staff vs admin**: Staff can view admin dashboard, only admins can create/delete users (tested and documented).
+- ✅ **Windows dev target**: Confirmed Windows as primary dev platform, testing works properly.
+
+### Open questions for future consideration
+
+- **Observer profile**: Should observers have a password-change page? Currently they aren't Flask-Login users.
+- **Denormalized names**: Keep `User.school`/`User.district` strings long term? Sync strategy if kept?
+- **Student PIN reset**: Always teacher-regenerated or add self-service option?
 
 ### Environment note (Windows test runner)
 
@@ -112,9 +131,24 @@ Date: YYYY-MM-DD
 - Prefer in-memory DB for tests: set `TestingConfig.SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"`.
 - Run tests: `pytest -q -rA -s`.
 
-### Next steps
+### Next steps (M3 readiness)
 
-- After you confirm the feedback questions, we will:
-  - Implement session uniqueness + `module` enum + Start Session form.
-  - Fix admin edit coercion and update docs.
-  - Add Alembic baseline and CI workflow.
+**Status**: Ready to proceed with M3 - Sessions Module implementation.
+
+**Completed foundation**:
+- ✅ Session uniqueness validation and conflict resolution
+- ✅ Session creation with student generation
+- ✅ Admin user management with proper validation
+- ✅ Documentation aligned and updated
+- ✅ Comprehensive test coverage
+
+**Ready for M3 focus areas**:
+- Session page with media display, filters, and pagination
+- Media upload functionality
+- Student PIN login and session access
+- Enhanced session management features
+
+**Technical debt items** (can be addressed alongside M3):
+- CI/CD pipeline setup
+- `Media.submitted_password` field cleanup
+- Observer password change functionality

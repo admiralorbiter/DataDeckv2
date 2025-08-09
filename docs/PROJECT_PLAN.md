@@ -123,10 +123,10 @@ Acceptance: Staging migration passes verification; cutover window executed safel
 ### Execution Order (high level)
 M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9 → M10 → M11 → M12 → M13. Parallelize where safe (tests/CI can start early).
 
-### Weekly Next Actions (initial)
+### Weekly Next Actions (updated post-M2)
 - [x] Convert to app factory (`create_app`) and relocate config loading
 - [x] Fix `login_view` endpoint; verify auth redirect works
-- [ ] Add observer auth blueprint stub with routes and templates
+- [x] Add observer auth blueprint stub with routes and templates (implemented with unified login)
 - [ ] Implement `Session` model + uniqueness logic (service + form validation)
 - [ ] Implement `Student` generation service (name, PIN hash, avatar path)
 - [x] Seed CLI to create demo teacher + session + 20 students

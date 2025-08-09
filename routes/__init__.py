@@ -5,6 +5,7 @@ from .auth import bp as auth_bp
 from .main import bp as main_bp
 from .observer_auth import bp as observer_auth_bp
 from .profile import bp as profile_bp
+from .sessions import bp as sessions_bp
 
 
 def init_app(app: Flask):
@@ -14,3 +15,4 @@ def init_app(app: Flask):
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(profile_bp)
+    app.register_blueprint(sessions_bp)

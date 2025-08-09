@@ -4,7 +4,7 @@
 - App factory pattern: `create_app(config_name)`
 - Blueprints:
   - `auth` (teacher/admin), `observer_auth` (observer), `public`, `sessions`, `media`, `posts`, `students`, `admin`, `observer`
-- Extensions: SQLAlchemy, Alembic, Flask-Login, Flask-WTF (CSRF), Celery or RQ, Logging
+- Extensions: SQLAlchemy, Flask-Login, Flask-WTF (CSRF), Celery or RQ, Logging
 - Config: `config.py` with `Development/Testing/Production`; `.env`
 
 ### Proposed Project Layout
@@ -27,7 +27,7 @@ app/
   tasks/ jobs.py
   templates/ ...
   static/ ...
-migrations/
+
 tests/
 wsgi.py
 ```
@@ -48,10 +48,9 @@ Indexes/Constraints
 - StudentMediaInteraction: unique(student_id, media_id)
 
 ### Blueprints and Routes
-- Auth (teacher/admin)
-  - GET/POST `/teacher/login`, POST `/teacher/logout`
-- Observer auth
-  - GET/POST `/observer/login`, POST `/observer/logout`
+- Auth (unified)
+  - GET/POST `/login`, POST `/logout` (handles all user types)
+  - Legacy redirects: `/teacher/login`, `/observer/login` → `/login`
 - Public
   - GET `/`
 - Sessions
@@ -81,9 +80,10 @@ Indexes/Constraints
   - GET `/observer/dashboard`
 
 ### Auth & Permissions
-- Teacher/Admin: Flask-Login user model + role checks for teacher routes
-- Observer: separate session namespace stored in secure cookie; decorator `@observer_required`
+- Teacher/Admin/Staff: Flask-Login user model + role checks for protected routes
+- Observer: separate session namespace (`observer_id`) stored in secure cookie; decorator `@observer_required`
 - Student: session-only `student_id` for permissions; decorator `@student_required` where applicable (upload, react, comment)
+- Unified login at `/login` handles all user types; observers get session-based auth, others get Flask-Login
 
 ### Forms & Validation (Flask-WTF)
 - StartSessionForm: section, num_students, district, school, first_name, last_name, module; enforce uniqueness for active hour

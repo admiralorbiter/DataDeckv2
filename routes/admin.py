@@ -68,25 +68,32 @@ def create_user():
 
         # Create correct subclass for observer accounts so observer login works
         new_user = Observer(**base_kwargs) if is_observer else User(**base_kwargs)
-        # Optional school/district info (either names or IDs) to satisfy validation
-        school_name = request.form.get("school")
-        district_name = request.form.get("district")
-        if school_name:
+
+        # Handle school/district info (either names or IDs) to satisfy validation
+        school_name = request.form.get("school", "").strip()
+        district_name = request.form.get("district", "").strip()
+        school_id_str = request.form.get("school_id", "").strip()
+        district_id_str = request.form.get("district_id", "").strip()
+
+        # Set school info (prefer ID over name)
+        if school_id_str:
+            try:
+                new_user.school_id = int(school_id_str)
+            except ValueError:
+                flash("Invalid school ID provided.", "danger")
+                return redirect(url_for("admin.admin_dashboard"))
+        elif school_name:
             new_user.school = school_name
-        if district_name:
+
+        # Set district info (prefer ID over name)
+        if district_id_str:
+            try:
+                new_user.district_id = int(district_id_str)
+            except ValueError:
+                flash("Invalid district ID provided.", "danger")
+                return redirect(url_for("admin.admin_dashboard"))
+        elif district_name:
             new_user.district = district_name
-        school_id = request.form.get("school_id")
-        district_id = request.form.get("district_id")
-        if school_id:
-            try:
-                new_user.school_id = int(school_id)
-            except ValueError:
-                pass
-        if district_id:
-            try:
-                new_user.district_id = int(district_id)
-            except ValueError:
-                pass
         new_user.validate()
         db.session.add(new_user)
         db.session.commit()
@@ -121,8 +128,34 @@ def edit_user(user_id):
 
             # Handle school and district for teachers/observers
             if user.requires_school_info():
-                user.school_id = request.form.get("school_id")
-                user.district_id = request.form.get("district_id")
+                school_id_str = request.form.get("school_id", "").strip()
+                district_id_str = request.form.get("district_id", "").strip()
+
+                # Set school_id (convert empty string to None)
+                if school_id_str:
+                    try:
+                        user.school_id = int(school_id_str)
+                    except ValueError:
+                        return (
+                            jsonify({"success": False, "message": "Invalid school ID"}),
+                            400,
+                        )
+                else:
+                    user.school_id = None
+
+                # Set district_id (convert empty string to None)
+                if district_id_str:
+                    try:
+                        user.district_id = int(district_id_str)
+                    except ValueError:
+                        return (
+                            jsonify(
+                                {"success": False, "message": "Invalid district ID"}
+                            ),
+                            400,
+                        )
+                else:
+                    user.district_id = None
 
             # Validate will raise ValueError on failure
             user.validate()

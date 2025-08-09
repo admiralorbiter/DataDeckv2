@@ -5,7 +5,7 @@ import string
 from werkzeug.security import generate_password_hash
 
 from app import create_app
-from models import District, School, Session, Student, User, db
+from models import District, Module, School, Session, Student, User, db
 
 
 def _random_code(length: int = 8) -> str:
@@ -51,7 +51,7 @@ def seed(num_students: int = 20) -> None:
             original_name=None,
             session_code=_random_code(8),
             section=1,
-            module="2",
+            module=Module.MODULE_2,
             created_by_id=teacher.id,
             character_set="animals",
         )

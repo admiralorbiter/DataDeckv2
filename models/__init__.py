@@ -4,7 +4,7 @@ from .district import District
 from .media import Media
 from .observer import Observer
 from .school import School
-from .session import Session
+from .session import Module, Session
 from .student import Student
 from .student_media_interaction import StudentMediaInteraction
 from .user import User
@@ -17,6 +17,7 @@ __all__ = [
     "School",
     "District",
     "Session",
+    "Module",
     "Media",
     "Comment",
     "StudentMediaInteraction",
