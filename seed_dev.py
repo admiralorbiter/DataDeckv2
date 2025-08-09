@@ -29,6 +29,31 @@ def seed(num_students: int = 20) -> None:
         db.session.add(school)
         db.session.flush()
 
+        # Default modules
+        modules = [
+            Module(
+                name="Module 2",
+                description="Data collection and analysis fundamentals",
+                is_active=True,
+                sort_order=1,
+            ),
+            Module(
+                name="Module 4",
+                description="Advanced data visualization and interpretation",
+                is_active=True,
+                sort_order=2,
+            ),
+            Module(
+                name="Any Data Project",
+                description="Open-ended data exploration project",
+                is_active=True,
+                sort_order=3,
+            ),
+        ]
+        for module in modules:
+            db.session.add(module)
+        db.session.flush()
+
         # Teacher/Admin user
         teacher = User(
             username="teacher1",
@@ -45,13 +70,14 @@ def seed(num_students: int = 20) -> None:
         db.session.add(teacher)
         db.session.flush()
 
-        # Session
+        # Session (use the first module - "Module 2")
+        module_2 = Module.query.filter_by(name="Module 2").first()
         session = Session(
             name="Hour 1 - Data Visualizations",
             original_name=None,
             session_code=_random_code(8),
             section=1,
-            module=Module.MODULE_2,
+            module_id=module_2.id,
             created_by_id=teacher.id,
             character_set="animals",
         )

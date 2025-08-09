@@ -21,7 +21,21 @@ def teacher(app):
         yield teacher
 
 
-def test_session_uniqueness_validation_no_conflict(app, teacher):
+@pytest.fixture
+def module(app):
+    with app.app_context():
+        module = Module(
+            name="Test Module",
+            description="A test curriculum module",
+            is_active=True,
+            sort_order=1,
+        )
+        db.session.add(module)
+        db.session.commit()
+        yield module
+
+
+def test_session_uniqueness_validation_no_conflict(app, teacher, module):
     """Test that validation passes when no conflicting session exists."""
     with app.app_context():
         # Should return None (no conflict) for section 1
@@ -29,14 +43,14 @@ def test_session_uniqueness_validation_no_conflict(app, teacher):
         assert conflict is None
 
 
-def test_session_uniqueness_validation_with_conflict(app, teacher):
+def test_session_uniqueness_validation_with_conflict(app, teacher, module):
     """Test that validation detects conflicting active sessions."""
     with app.app_context():
         # Create an active session for section 1
         existing = Session(
             name="Existing Session",
             section=1,
-            module=Module.MODULE_2,
+            module_id=module.id,
             session_code="ABCD1234",
             created_by_id=teacher.id,
             character_set="animals",
@@ -54,14 +68,14 @@ def test_session_uniqueness_validation_with_conflict(app, teacher):
         assert conflict is None
 
 
-def test_session_uniqueness_ignores_archived(app, teacher):
+def test_session_uniqueness_ignores_archived(app, teacher, module):
     """Test that archived sessions don't cause conflicts."""
     with app.app_context():
         # Create an archived session for section 1
         archived = Session(
             name="Archived Session",
             section=1,
-            module=Module.MODULE_2,
+            module_id=module.id,
             session_code="ARCH1234",
             created_by_id=teacher.id,
             character_set="animals",
@@ -75,34 +89,34 @@ def test_session_uniqueness_ignores_archived(app, teacher):
         assert conflict is None
 
 
-def test_create_session_without_conflict(app, teacher):
+def test_create_session_without_conflict(app, teacher, module):
     """Test creating a session when no conflicts exist."""
     with app.app_context():
         session, was_archived = SessionService.create_session(
             teacher=teacher,
             name="New Session",
             section=1,
-            module=Module.MODULE_2,
+            module_id=module.id,
             character_set="animals",
         )
 
         assert session is not None
         assert session.name == "New Session"
         assert session.section == 1
-        assert session.module == Module.MODULE_2
+        assert session.module_id == module.id
         assert session.created_by_id == teacher.id
         assert not was_archived
         assert len(session.session_code) == 8
 
 
-def test_create_session_with_conflict_raises_error(app, teacher):
+def test_create_session_with_conflict_raises_error(app, teacher, module):
     """Test that creating a conflicting session raises an error by default."""
     with app.app_context():
         # Create existing session
         existing = Session(
             name="Existing Session",
             section=1,
-            module=Module.MODULE_2,
+            module_id=module.id,
             session_code="EXIST123",
             created_by_id=teacher.id,
             character_set="animals",
@@ -116,21 +130,21 @@ def test_create_session_with_conflict_raises_error(app, teacher):
                 teacher=teacher,
                 name="Conflicting Session",
                 section=1,
-                module=Module.MODULE_4,  # Different module, same section
+                module_id=module.id,  # Different module, same section
                 character_set="superheroes",
             )
 
         assert exc_info.value.existing_session.id == existing.id
 
 
-def test_create_session_with_auto_archive(app, teacher):
+def test_create_session_with_auto_archive(app, teacher, module):
     """Test creating a session with auto-archive of conflicting session."""
     with app.app_context():
         # Create existing session
         existing = Session(
             name="Existing Session",
             section=1,
-            module=Module.MODULE_2,
+            module_id=module.id,
             session_code="EXIST123",
             created_by_id=teacher.id,
             character_set="animals",
@@ -143,7 +157,7 @@ def test_create_session_with_auto_archive(app, teacher):
             teacher=teacher,
             name="New Session",
             section=1,
-            module=Module.MODULE_4,
+            module_id=module.id,
             character_set="superheroes",
             auto_archive_existing=True,
         )
@@ -158,14 +172,14 @@ def test_create_session_with_auto_archive(app, teacher):
         assert existing.archived_at is not None
 
 
-def test_generate_unique_session_code(app):
+def test_generate_unique_session_code(app, module):
     """Test that session code generation creates unique codes."""
     with app.app_context():
         # Create a session with a specific code
         existing = Session(
             name="Test Session",
             section=1,
-            module=Module.MODULE_2,
+            module_id=module.id,
             session_code="TESTCODE",
             created_by_id=1,
             character_set="animals",
@@ -179,14 +193,14 @@ def test_generate_unique_session_code(app):
         assert len(new_code) == 8
 
 
-def test_generate_students_for_session(app, teacher):
+def test_generate_students_for_session(app, teacher, module):
     """Test student generation for a session."""
     with app.app_context():
         # Create a session
         session = Session(
             name="Test Session",
             section=1,
-            module=Module.MODULE_2,
+            module_id=module.id,
             session_code="STUDENTS",
             created_by_id=teacher.id,
             character_set="animals",

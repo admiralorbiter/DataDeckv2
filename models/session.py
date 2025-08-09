@@ -1,16 +1,6 @@
 from datetime import datetime, timezone
-from enum import Enum
 
 from .base import BaseModel, db
-
-
-class Module(Enum):
-    MODULE_2 = "2"
-    MODULE_4 = "4"
-
-    @property
-    def display_name(self):
-        return f"Module {self.value}"
 
 
 class Session(BaseModel):
@@ -20,7 +10,7 @@ class Session(BaseModel):
     original_name = db.Column(db.String(128))
     session_code = db.Column(db.String(8), unique=True, nullable=False)
     section = db.Column(db.Integer, nullable=False)
-    module = db.Column(db.Enum(Module), nullable=False)
+    module_id = db.Column(db.Integer, db.ForeignKey("modules.id"), nullable=False)
     is_paused = db.Column(db.Boolean, nullable=False, default=False)
     is_archived = db.Column(db.Boolean, nullable=False, default=False)
     archived_at = db.Column(db.DateTime)
@@ -31,6 +21,7 @@ class Session(BaseModel):
 
     # Relationships
     created_by = db.relationship("User", foreign_keys=[created_by_id])
+    module = db.relationship("Module", back_populates="sessions")
 
     # Helper methods
     def archive(self):
@@ -51,10 +42,8 @@ class Session(BaseModel):
         return query.first()
 
     def __repr__(self):
-        return (
-            f"<Session {self.name} "
-            f"(Section {self.section}, {self.module.display_name})>"
-        )
+        module_name = self.module.name if self.module else "Unknown Module"
+        return f"<Session {self.name} " f"(Section {self.section}, {module_name})>"
 
     __table_args__ = (
         db.Index(

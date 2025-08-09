@@ -4,9 +4,10 @@ from flask import flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from werkzeug.security import generate_password_hash
 
-from forms import UserCreationForm
+from forms import ModuleForm, UserCreationForm
 from models.base import db
 from models.district import District
+from models.module import Module
 from models.observer import Observer
 from models.school import School
 from models.user import User
@@ -33,16 +34,20 @@ def admin_required(f):
 @admin_required
 def admin_dashboard():
     form = UserCreationForm()
+    module_form = ModuleForm()
     users = User.query.order_by(User.created_at.desc()).all()
     schools = School.query.all()
     districts = District.query.all()
+    modules = Module.query.order_by(Module.sort_order.asc(), Module.name.asc()).all()
     return render_template(
         "admin/dashboard.html",
         form=form,
+        module_form=module_form,
         roles=User.Role,
         users=users,
         schools=schools,
         districts=districts,
+        modules=modules,
     )
 
 
@@ -214,6 +219,150 @@ def delete_user(user_id):
         db.session.commit()
         flash("User deleted successfully!", "success")
         return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+# Module Management Routes
+
+
+@bp.route("/admin/create_module", methods=["POST"])
+@login_required
+@admin_required
+def create_module():
+    """Create a new curriculum module."""
+    form = ModuleForm()
+
+    if form.validate_on_submit():
+        try:
+            # Check if module name already exists
+            existing_module = Module.query.filter_by(name=form.name.data).first()
+            if existing_module:
+                flash(f"Module '{form.name.data}' already exists.", "danger")
+                return redirect(url_for("admin.admin_dashboard"))
+
+            module = Module(
+                name=form.name.data,
+                description=form.description.data,
+                sort_order=form.sort_order.data,
+                is_active=form.is_active.data,
+            )
+
+            db.session.add(module)
+            db.session.commit()
+            flash(f"Module '{module.name}' created successfully!", "success")
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error creating module: {e}", "danger")
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"{field}: {error}", "danger")
+
+    return redirect(url_for("admin.admin_dashboard"))
+
+
+@bp.route("/admin/edit_module/<int:module_id>", methods=["POST"])
+@login_required
+@admin_required
+def edit_module(module_id):
+    """Edit an existing curriculum module."""
+    module = Module.query.get_or_404(module_id)
+
+    try:
+        # Check if new name conflicts with existing module (excluding current one)
+        new_name = request.form.get("name", "").strip()
+        if new_name and new_name != module.name:
+            existing_module = Module.query.filter(
+                Module.name == new_name, Module.id != module_id
+            ).first()
+            if existing_module:
+                flash(f"Module name '{new_name}' already exists.", "danger")
+                return redirect(url_for("admin.admin_dashboard"))
+
+        # Update fields
+        if new_name:
+            module.name = new_name
+
+        description = request.form.get("description", "").strip()
+        module.description = description if description else None
+
+        try:
+            sort_order = int(request.form.get("sort_order", 0))
+            module.sort_order = max(0, sort_order)  # Ensure non-negative
+        except (ValueError, TypeError):
+            module.sort_order = 0
+
+        is_active = request.form.get("is_active") == "True"
+        module.is_active = is_active
+
+        db.session.commit()
+        flash(f"Module '{module.name}' updated successfully!", "success")
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error updating module: {e}", "danger")
+
+    return redirect(url_for("admin.admin_dashboard"))
+
+
+@bp.route("/admin/toggle_module/<int:module_id>", methods=["POST"])
+@login_required
+@admin_required
+def toggle_module(module_id):
+    """Toggle module active/inactive status."""
+    module = Module.query.get_or_404(module_id)
+
+    try:
+        module.is_active = not module.is_active
+        db.session.commit()
+
+        status = "activated" if module.is_active else "deactivated"
+        flash(f"Module '{module.name}' {status} successfully!", "success")
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error toggling module status: {e}", "danger")
+
+    return redirect(url_for("admin.admin_dashboard"))
+
+
+@bp.route("/admin/delete_module/<int:module_id>", methods=["POST"])
+@login_required
+@admin_required
+def delete_module(module_id):
+    """Delete a curriculum module (only if no sessions use it)."""
+    module = Module.query.get_or_404(module_id)
+
+    try:
+        # Check if any sessions use this module
+        from models.session import Session
+
+        session_count = Session.query.filter_by(module_id=module_id).count()
+
+        if session_count > 0:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": (
+                            f"Cannot delete module '{module.name}' - "
+                            f"it is used by {session_count} session(s)."
+                        ),
+                    }
+                ),
+                400,
+            )
+
+        module_name = module.name
+        db.session.delete(module)
+        db.session.commit()
+
+        flash(f"Module '{module_name}' deleted successfully!", "success")
+        return jsonify({"success": True})
+
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500

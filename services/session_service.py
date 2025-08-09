@@ -41,7 +41,7 @@ class SessionService:
         teacher: User,
         name: str,
         section: int,
-        module,
+        module_id: int,
         character_set: str = "animals",
         auto_archive_existing: bool = False,
     ) -> Tuple[Session, bool]:
@@ -51,7 +51,7 @@ class SessionService:
             teacher: The teacher creating the session
             name: Session name
             section: Section/period number
-            module: Module enum value
+            module_id: ID of the module to assign to the session
             character_set: Character set for student generation
             auto_archive_existing: If True, archive conflicting sessions automatically
 
@@ -86,7 +86,7 @@ class SessionService:
         new_session = Session(
             name=name,
             section=section,
-            module=module,
+            module_id=module_id,
             character_set=character_set,
             session_code=session_code,
             created_by_id=teacher.id,

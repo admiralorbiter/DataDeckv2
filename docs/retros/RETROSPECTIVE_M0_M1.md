@@ -7,7 +7,7 @@ Date: December 2024
 ### Executive summary
 
 - **M0/M1 are complete and solid**: App factory, blueprints, CSRF, auth scaffolding, and core models are implemented. Seed script, observer flow, and admin dashboard exist with full CRUD operations.
-- **Major fixes completed**: Session uniqueness enforcement with hybrid auto-archive, admin user creation with proper school/district handling, unified login documentation, Module enum implementation.
+- **Major fixes completed**: Session uniqueness enforcement with hybrid auto-archive, admin user creation with proper school/district handling, unified login documentation, admin-configurable Module system implementation.
 - **Ready for M3**: Core infrastructure is stable, tested, and documented. Session creation flow is fully functional with conflict resolution.
 
 ### M0 — Bootstrap & Tooling
@@ -40,7 +40,7 @@ Date: December 2024
 
 - **Recent fixes completed**
   - ✅ **Session uniqueness**: Implemented hybrid approach with `SessionService` - detects conflicts, offers auto-archive option, enforces one active session per (teacher, section).
-  - ✅ **Module enum**: Created `Module.MODULE_2` and `Module.MODULE_4` enum with display names for better validation and UI.
+  - ✅ **Admin-configurable modules**: Replaced hardcoded enum with database-driven Module model, allowing admins to create/manage curriculum modules dynamically.
   - ✅ **Admin user creation**: Fixed school/district ID coercion, added form fields with show/hide logic, proper validation for teachers/observers.
   - ✅ **Session creation flow**: Full session creation with student generation, conflict resolution UI, archive/unarchive functionality.
   - **Students**: `User.password_hash` used as PIN hash for students; auth is session-only (PIN-based), not email+password.
@@ -109,11 +109,15 @@ Date: December 2024
 - [x] **Session service architecture** - Clean separation of business logic with comprehensive testing
 - [x] **Enhanced admin UI** - Dynamic form fields, better validation, improved UX
 - [x] **Navigation integration** - Sessions accessible from main nav for appropriate roles
+- [x] **Module system redesign** - Converted from hardcoded enum to admin-configurable database model
+- [x] **Module admin UI** - Full CRUD operations for modules in admin dashboard with validation
+- [x] **Dynamic form choices** - Session creation form populates module choices from active modules
+- [x] **Default module seeding** - Three default modules created: Module 2, Module 4, and Any Data Project
 
 ### Questions resolved
 
 - ✅ **Session duplicates**: Implemented hybrid approach - user gets friendly error with option to auto-archive existing session.
-- ✅ **Module values**: Implemented as Python Enum (`Module.MODULE_2`, `Module.MODULE_4`) with display names.
+- ✅ **Module system**: Implemented admin-configurable database model with default modules (Module 2, Module 4, Any Data Project) and full CRUD operations.
 - ✅ **Student auth**: Confirmed PIN-only auth with session-based access (no Flask-Login for students).
 - ✅ **Staff vs admin**: Staff can view admin dashboard, only admins can create/delete users (tested and documented).
 - ✅ **Windows dev target**: Confirmed Windows as primary dev platform, testing works properly.

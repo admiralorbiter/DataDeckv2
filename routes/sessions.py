@@ -2,7 +2,7 @@ from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from forms import StartSessionForm
-from models import Module, Session, db
+from models import Session, db
 from services.session_service import SessionConflictError, SessionService
 
 from .base import create_blueprint
@@ -28,15 +28,15 @@ def start_session():
             # Check if user clicked "Archive and Create" button
             auto_archive = "archive_and_create" in request.form
 
-            # Convert module string back to enum
-            module_enum = Module(form.module.data)
+            # Get the selected module (form.module.data is now an integer ID)
+            module_id = form.module.data
 
             # Attempt to create session
             new_session, was_archived = SessionService.create_session(
                 teacher=current_user,
                 name=form.name.data,
                 section=form.section.data,
-                module=module_enum,
+                module_id=module_id,
                 character_set=form.character_set.data,
                 auto_archive_existing=auto_archive,
             )
@@ -193,7 +193,7 @@ def check_section_availability():
             "conflict": {
                 "id": existing.id,
                 "name": existing.name,
-                "module": existing.module.display_name,
+                "module": existing.module.name,
                 "created_at": existing.created_at.isoformat(),
             },
         }

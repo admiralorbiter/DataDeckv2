@@ -41,6 +41,20 @@ def create_school(district: District, name: str | None = None, code: str | None 
     return s
 
 
+def create_module(
+    name: str | None = None, description: str | None = None, sort_order: int = 0
+) -> Module:
+    module = Module(
+        name=name or f"Module {rand_code(2)}",
+        description=description or f"Test module {rand_code(4)}",
+        sort_order=sort_order,
+        is_active=True,
+    )
+    db.session.add(module)
+    db.session.flush()
+    return module
+
+
 def create_teacher(district: District, school, username: str | None = None) -> User:
     teacher = User(
         username=username or f"teacher_{rand_code(4)}",
@@ -57,12 +71,18 @@ def create_teacher(district: District, school, username: str | None = None) -> U
     return teacher
 
 
-def create_session(teacher: User, section: int = 1) -> Session:
+def create_session(
+    teacher: User, section: int = 1, module: Module | None = None
+) -> Session:
+    if module is None:
+        # Create a default module for testing
+        module = create_module("Test Module", "Default test module")
+
     sess = Session(
         name=f"Hour {section}",
         session_code=rand_code(8),
         section=section,
-        module=Module.MODULE_2,
+        module_id=module.id,
         created_by_id=teacher.id,
         character_set="animals",
     )

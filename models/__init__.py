@@ -2,9 +2,10 @@ from .base import db
 from .comment import Comment
 from .district import District
 from .media import Media
+from .module import Module
 from .observer import Observer
 from .school import School
-from .session import Module, Session
+from .session import Session
 from .student import Student
 from .student_media_interaction import StudentMediaInteraction
 from .user import User

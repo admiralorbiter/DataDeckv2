@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import IntegerField, PasswordField, SelectField, StringField, SubmitField
 from wtforms.validators import DataRequired, Email, EqualTo, NumberRange
 
-from models.session import Module
+from models.module import Module
 from models.user import User
 
 
@@ -75,7 +75,8 @@ class StartSessionForm(FlaskForm):
     module = SelectField(
         "Module",
         validators=[DataRequired()],
-        choices=[(mod.value, mod.display_name) for mod in Module],
+        choices=[],  # Will be populated dynamically
+        coerce=int,  # Convert string values to integers
     )
     character_set = SelectField(
         "Character Set",
@@ -90,3 +91,35 @@ class StartSessionForm(FlaskForm):
     )
     submit = SubmitField("Start Session")
     archive_and_create = SubmitField("Archive Existing & Start New")
+
+    def __init__(self, *args, **kwargs):
+        super(StartSessionForm, self).__init__(*args, **kwargs)
+        # Populate module choices from database
+        self.module.choices = Module.get_choices_for_form()
+
+
+class ModuleForm(FlaskForm):
+    """Form for creating/editing curriculum modules."""
+
+    name = StringField(
+        "Module Name",
+        validators=[DataRequired()],
+        render_kw={"placeholder": "e.g., Module 3 - Advanced Statistics"},
+    )
+    description = StringField(
+        "Description",
+        render_kw={"placeholder": "Brief description of the module content"},
+    )
+    sort_order = IntegerField(
+        "Sort Order",
+        validators=[NumberRange(min=0, message="Sort order must be 0 or greater")],
+        default=0,
+        render_kw={"placeholder": "0"},
+    )
+    is_active = SelectField(
+        "Status",
+        choices=[(True, "Active"), (False, "Inactive")],
+        coerce=lambda x: x == "True",
+        default=True,
+    )
+    submit = SubmitField("Save Module")

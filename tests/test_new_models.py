@@ -1,6 +1,15 @@
 import pytest
 
-from models import Comment, Media, Session, Student, StudentMediaInteraction, User, db
+from models import (
+    Comment,
+    Media,
+    Module,
+    Session,
+    Student,
+    StudentMediaInteraction,
+    User,
+    db,
+)
 
 
 @pytest.fixture
@@ -19,13 +28,27 @@ def teacher(app):
         yield teacher
 
 
-def test_session_media_indexes_exist(app, teacher):
+@pytest.fixture
+def module(app):
+    with app.app_context():
+        module = Module(
+            name="Test Module",
+            description="A test curriculum module",
+            is_active=True,
+            sort_order=1,
+        )
+        db.session.add(module)
+        db.session.commit()
+        yield module
+
+
+def test_session_media_indexes_exist(app, teacher, module):
     with app.app_context():
         session = Session(
             name="Hour 1",
             session_code="ABCDEFGH",
             section=1,
-            module="2",
+            module_id=module.id,
             created_by_id=teacher.id,
         )
         db.session.add(session)
@@ -46,13 +69,13 @@ def test_session_media_indexes_exist(app, teacher):
         assert media.session_id == session.id
 
 
-def test_student_and_interaction_unique_constraint(app, teacher):
+def test_student_and_interaction_unique_constraint(app, teacher, module):
     with app.app_context():
         session = Session(
             name="Hour 2",
             session_code="HGFEDCBA",
             section=2,
-            module="2",
+            module_id=module.id,
             created_by_id=teacher.id,
         )
         db.session.add(session)
@@ -92,13 +115,13 @@ def test_student_and_interaction_unique_constraint(app, teacher):
             db.session.commit()
 
 
-def test_comment_self_relationship(app, teacher):
+def test_comment_self_relationship(app, teacher, module):
     with app.app_context():
         session = Session(
             name="Hour 3",
             session_code="ZXCVBNMA",
             section=3,
-            module="2",
+            module_id=module.id,
             created_by_id=teacher.id,
         )
         db.session.add(session)
