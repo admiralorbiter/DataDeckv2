@@ -37,16 +37,22 @@ Acceptance: Schema creates successfully via `db.create_all()`; seed creates demo
 
 Acceptance: Valid credentials redirect to dashboards; protected routes gated by role; password change persists.
 
-#### M3 — Sessions Module ✅ COMPLETED
-- [x] StartSessionForm (hour/section, module, district/school)
+#### M3 — Sessions Module 🔄 PARTIALLY COMPLETED
+- [x] StartSessionForm (hour/section, module, character_set)
 - [x] Uniqueness rule (teacher, section, active) enforced
-- [x] Create session → generate N students (name + PIN + avatar)
-- [x] Session page with filters and basic display
-- [x] Archive/unarchive/delete actions
+- [x] Create session → generate 20 students (name + PIN + character)
+- [x] Basic session list and detail pages
+- [x] Archive/unarchive actions
 - [x] Module system with admin-configurable curriculum modules
-- [x] Full session lifecycle management
+- [ ] Session filtering (by status, module, date)
+- [ ] Session pagination for large datasets
+- [ ] Session delete functionality
+- [ ] Session pause/unpause functionality
+- [ ] Select # of students to generate
+- [ ] Media filtering within sessions (graph_tag, variable_tag)
 
-Acceptance: ✅ Duplicate active hour blocked; archive/unarchive preserves original name; comprehensive test coverage.
+
+Acceptance: ✅ Core session creation and management works; ❌ Advanced filtering and pagination still needed.
 
 #### M4 — Students
 - [ ] Student list (per teacher)
