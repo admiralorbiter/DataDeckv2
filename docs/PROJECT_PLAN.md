@@ -46,13 +46,13 @@ Acceptance: Valid credentials redirect to dashboards; protected routes gated by 
 - [x] Module system with admin-configurable curriculum modules
 - [x] Session filtering (by status, module, date)
 - [x] Session pagination for large datasets
-- [ ] Session delete functionality
+- [x] Session delete functionality
 - [ ] Session pause/unpause functionality
 - [ ] Select # of students to generate
 - [ ] Media filtering within sessions (graph_tag, variable_tag)
 
 
-Acceptance: ✅ Core session creation, management, filtering, and pagination complete with robust UI; ❌ Delete, pause/unpause, and advanced features still needed.
+Acceptance: ✅ Core session creation, management, filtering, pagination, and delete complete with robust UI; ❌ Pause/unpause and advanced features still needed.
 
 #### M3.5 — UI/Branding & Frontend Foundation ✅ COMPLETED
 - [x] Establish brand system and tokens

@@ -32,7 +32,7 @@ class Student(User):
     section = db.relationship(
         "Session",
         foreign_keys=[section_id],
-        backref=db.backref("students", lazy="dynamic"),
+        backref=db.backref("students", lazy="dynamic", cascade="all, delete-orphan"),
     )
 
     def __init__(

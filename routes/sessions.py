@@ -252,6 +252,44 @@ def unarchive_session(session_id):
     return redirect(url_for("sessions.list_sessions"))
 
 
+@bp.route("/sessions/<int:session_id>/delete", methods=["POST"])
+@login_required
+def delete_session(session_id):
+    """Permanently delete a session with all its data."""
+    session = Session.query.get_or_404(session_id)
+
+    # Check ownership for teachers
+    if current_user.is_teacher() and session.created_by_id != current_user.id:
+        flash("You can only delete your own sessions.", "danger")
+        return redirect(url_for("sessions.list_sessions"))
+
+    # Only allow deletion of archived sessions to prevent accidental data loss
+    if not session.is_archived:
+        flash(
+            "Sessions must be archived before they can be deleted.",
+            "Archive this session first. warning",
+        )
+        return redirect(url_for("sessions.list_sessions"))
+
+    try:
+        session_name = session.name
+
+        # Delete related data first (cascade should handle this, but being explicit)
+        # Students and media will be cascade deleted by the database relationships
+
+        # Delete the session
+        db.session.delete(session)
+        db.session.commit()
+
+        flash(f"Session '{session_name}' has been permanently deleted.", "success")
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error deleting session: {str(e)}", "danger")
+
+    return redirect(url_for("sessions.list_sessions"))
+
+
 @bp.route("/api/sessions/check-section", methods=["GET"])
 @login_required
 def check_section_availability():

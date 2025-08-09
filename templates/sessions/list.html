@@ -120,6 +120,12 @@
                                             <i class="fas fa-undo"></i> Unarchive
                                         </button>
                                     </form>
+                                    <form method="POST" action="{{ url_for('sessions.delete_session', session_id=session.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                onclick="return confirm('⚠️ PERMANENTLY DELETE this session?\\n\\nThis will delete:\\n• All student data\\n• All media uploads\\n• Session history\\n\\nThis action CANNOT be undone!')">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </form>
                                 {% else %}
                                     <form method="POST" action="{{ url_for('sessions.archive_session', session_id=session.id) }}" class="d-inline">
                                         <button type="submit" class="btn btn-outline-secondary btn-sm"

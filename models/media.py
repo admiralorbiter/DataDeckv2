@@ -46,7 +46,12 @@ class Media(BaseModel):
     session = db.relationship(
         "Session",
         foreign_keys=[session_id],
-        backref=db.backref("media", lazy="dynamic", order_by="desc(Media.uploaded_at)"),
+        backref=db.backref(
+            "media",
+            lazy="dynamic",
+            order_by="desc(Media.uploaded_at)",
+            cascade="all, delete-orphan",
+        ),
     )
     student = db.relationship(
         "Student",
