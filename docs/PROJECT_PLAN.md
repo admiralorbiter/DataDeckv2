@@ -54,6 +54,36 @@ Acceptance: Valid credentials redirect to dashboards; protected routes gated by 
 
 Acceptance: ✅ Core session creation and management works; ❌ Advanced filtering and pagination still needed.
 
+#### M3.5 — UI/Branding & Frontend Foundation
+- Establish brand system and tokens
+  - Define CSS custom properties (colors, spacing, typography) in `static/css/brand.css`
+  - Document palette and type scale alignment with `docs/UI_UX_DESIGN.md`
+- Normalize base layout and navigation
+  - Ensure a single `templates/base.html` shell (skip-link, header, breadcrumb slot, container)
+  - Refactor `templates/nav.html` for role-based items and active state styling
+- Component library (Jinja macros) under `templates/_components/`
+  - Buttons (primary/secondary/destructive/ghost)
+  - Form controls (input/select/textarea) with error rendering
+  - Cards, tables, badges, modals, pagination, flash/toasts
+- Utilities and CSS architecture
+  - Add lightweight utility classes (spacing, flex/grid, text) or adopt Bootstrap 5 (document decision)
+  - Organize CSS: import order, file structure, and naming conventions (BEM/utility mix)
+- Responsiveness and accessibility
+  - Mobile-first breakpoints; responsive nav patterns
+  - Focus outlines, skip-link, ARIA labels; keyboard navigation across core views
+- Icons and assets
+  - Choose icon set (Heroicons/Font Awesome) and integrate via static assets/CDN
+  - Add logo placeholder and favicon; document asset locations
+- Apply foundation to core pages
+  - Update: `templates/login.html`, `templates/index.html`, `templates/sessions/list.html`, `templates/sessions/detail.html`, `templates/admin/dashboard.html`
+- Style guide
+  - Create `templates/styleguide.html` showcasing tokens and components (dev-only link)
+- Non-functional targets
+  - Accessibility (axe) critical issues = 0 on updated pages
+  - Lighthouse: Accessibility ≥ 90, Best Practices ≥ 90; CSS bundle ≤ 200KB uncompressed
+
+Acceptance: Base tokens load on all pages; component macros exist and are used in ≥3 pages; layouts are responsive without horizontal scroll at common breakpoints; axe reports no critical issues on key pages.
+
 #### M4 — Students
 - [ ] Student list (per teacher)
 - [ ] Delete with ownership checks
@@ -129,7 +159,7 @@ Acceptance: 80%+ global coverage; CI is green.
 Acceptance: Staging migration passes verification; cutover window executed safely.
 
 ### Execution Order (high level)
-M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9 → M10 → M11 → M12 → M13. Parallelize where safe (tests/CI can start early).
+M0 → M1 → M2 → M3 → M3.5 → M4 → M5 → M6 → M7 → M8 → M9 → M10 → M11 → M12 → M13. Parallelize where safe (tests/CI can start early).
 
 ### Weekly Next Actions (updated post-M3)
 - [x] Convert to app factory (`create_app`) and relocate config loading
