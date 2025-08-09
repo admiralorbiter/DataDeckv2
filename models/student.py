@@ -43,7 +43,10 @@ class Student(User):
             email=email,
             password_hash=password_hash,
             role=User.Role.STUDENT,
-            **kwargs
+            **kwargs,
         )
         self.character_name = character_name
         self.teacher_id = teacher_id
+
+    def __repr__(self):
+        return f"<Student {self.character_name} (ID: {self.id})>"

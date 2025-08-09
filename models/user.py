@@ -64,3 +64,6 @@ class User(BaseModel, UserMixin):
                     "Teachers and Observers must have both school and district assigned"
                 )
         return True
+
+    def __repr__(self):
+        return f"<User {self.username} ({self.role.value})>"

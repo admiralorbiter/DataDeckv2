@@ -16,9 +16,21 @@ class SessionConflictError(Exception):
 
 
 class SessionService:
+    """Service class for session-related business logic and operations."""
+
     @staticmethod
     def generate_session_code(length: int = 8) -> str:
-        """Generate a unique session code."""
+        """Generate a unique session code for student access.
+
+        Args:
+            length: Length of the session code (default: 8)
+
+        Returns:
+            A unique alphanumeric session code (uppercase letters and digits)
+
+        Note:
+            Checks database for uniqueness and retries until a unique code is found.
+        """
         alphabet = string.ascii_uppercase + string.digits
         while True:
             code = "".join(random.choice(alphabet) for _ in range(length))
@@ -31,8 +43,18 @@ class SessionService:
     ) -> Optional[Session]:
         """Check if a session conflicts with existing active sessions.
 
+        The system enforces uniqueness rule: one active session per (teacher, section).
+
+        Args:
+            teacher_id: ID of the teacher creating the session
+            section: Section/period number (e.g., 1, 2, 3)
+            session_id: Optional session ID to exclude from conflict check (for updates)
+
         Returns:
-            None if no conflict, or the conflicting Session if one exists.
+            None if no conflict exists, or the conflicting Session object if found
+
+        Note:
+            Only checks active (non-archived) sessions for conflicts.
         """
         return Session.find_active_conflict(teacher_id, section, session_id)
 
@@ -101,7 +123,30 @@ class SessionService:
     def generate_students_for_session(
         session: Session, count: int = 20
     ) -> list[Student]:
-        """Generate students for a session with unique names and PINs."""
+        """Generate students for a session with unique themed names and secure PINs.
+
+        Creates the specified number of students with:
+        - Unique character names based on session's character_set theme
+        - Unique 4-digit PINs (hashed for security)
+        - Auto-generated usernames and email addresses
+        - Avatar paths based on character theme
+
+        Args:
+            session: The session to generate students for
+            count: Number of students to generate (default: 20, range: 1-50)
+
+        Returns:
+            List of Student objects with unique names, PINs, and theme-based avatars
+
+        Raises:
+            ValueError: If count is outside valid range (implicitly via database)
+
+        Note:
+            - Students are added to database session but not committed
+            - PINs are hashed using werkzeug.security for security
+            - Character themes: animals, superheroes, fantasy, space
+            - Falls back to generic names if unique name generation fails
+        """
         from werkzeug.security import generate_password_hash
 
         students = []

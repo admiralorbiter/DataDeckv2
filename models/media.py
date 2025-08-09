@@ -31,7 +31,7 @@ class Media(BaseModel):
     graph_tag = db.Column(db.String(64))
     is_graph = db.Column(db.Boolean, nullable=False, default=False)
     variable_tag = db.Column(db.String(64))
-    submitted_password = db.Column(db.String(128))
+    # Note: removed submitted_password field - was legacy, unused in Flask impl
 
     # Poster relationships
     student_id = db.Column(db.Integer, db.ForeignKey("students.id"))
