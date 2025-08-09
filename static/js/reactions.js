@@ -118,9 +118,29 @@ function updateBadgeSelection(container, badgeType, isSelected) {
  */
 function showSuccess(message) {
     // You can customize this to use your preferred notification system
-    if (typeof showAlert === 'function') {
-        showAlert(message, 'success');
-    } else {
+    // Prefer Bootstrap toast if available
+    const containerId = 'toast-container';
+    let container = document.getElementById(containerId);
+    if (!container) {
+        container = document.createElement('div');
+        container.id = containerId;
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '1055';
+        document.body.appendChild(container);
+    }
+
+    const toastEl = document.createElement('div');
+    toastEl.className = 'toast align-items-center text-bg-success border-0';
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
+    toastEl.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>`;
+    container.appendChild(toastEl);
+    try {
+        const toast = new bootstrap.Toast(toastEl, { delay: 1800 });
+        toast.show();
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+    } catch (e) {
         console.log('Success:', message);
     }
 }
@@ -130,9 +150,27 @@ function showSuccess(message) {
  */
 function showError(message) {
     // You can customize this to use your preferred notification system
-    if (typeof showAlert === 'function') {
-        showAlert(message, 'danger');
-    } else {
+    const containerId = 'toast-container';
+    let container = document.getElementById(containerId);
+    if (!container) {
+        container = document.createElement('div');
+        container.id = containerId;
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '1055';
+        document.body.appendChild(container);
+    }
+    const toastEl = document.createElement('div');
+    toastEl.className = 'toast align-items-center text-bg-danger border-0';
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
+    toastEl.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>`;
+    container.appendChild(toastEl);
+    try {
+        const toast = new bootstrap.Toast(toastEl, { delay: 2000 });
+        toast.show();
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+    } catch (e) {
         console.error('Error:', message);
     }
 }

@@ -115,7 +115,7 @@
           {% elif session.get('student_id') %}
             <!-- Student session: Show link to their current session -->
             {% if nav_sessions.type == 'student' and nav_sessions.data %}
-              <li class="nav-item"><a class="nav-link dd-tab {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}" href="{{ url_for('sessions.session_detail', session_id=nav_sessions.data.id) }}">My Session</a></li>
+              <li class="nav-item"><a class="nav-link dd-tab {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}" href="{{ url_for('sessions.student_view', session_id=nav_sessions.data.id) }}">My Session</a></li>
               <li class="nav-item"><a class="nav-link dd-tab {% if request.endpoint and request.endpoint.startswith('media.') %}active{% endif %}" href="{{ url_for('media.my_uploads') }}">My Uploads</a></li>
             {% endif %}
             <li class="nav-item"><a class="nav-link dd-tab" href="{{ url_for('main.student_logout') }}">Student Logout</a></li>

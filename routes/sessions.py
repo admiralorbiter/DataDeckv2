@@ -389,6 +389,7 @@ def reset_session_reactions(session_id: int):
                 synchronize_session=False,
             )
         db.session.commit()
+        # Prefer toast on the redirected page
         flash("All reactions cleared for this session.", "success")
     except Exception:
         db.session.rollback()
@@ -745,3 +746,94 @@ def check_section_availability():
         }
     else:
         return {"available": True}
+
+
+@bp.route("/sessions/<int:session_id>/student")
+@teacher_or_student_required
+def student_view(session_id: int):
+    """Student-friendly participation view for a session.
+
+    Uses the same filtering model as session_detail, renders a simplified
+    grid-first layout with non-clickable badges and clear CTAs.
+    """
+    session_obj = Session.query.get_or_404(session_id)
+
+    # If a student, ensure they belong to this session
+    if not current_user.is_authenticated:
+        student_id = session.get("student_id")
+        if student_id:
+            student = Student.query.get(student_id)
+            if not student or student.section_id != session_id:
+                flash("You can only access your assigned session.", "warning")
+                return redirect(url_for("main.index"))
+
+    # Initialize and populate filters
+    media_filter_form = MediaFilterForm()
+    media_filter_form.populate_tag_choices(session_id)
+
+    media_query = Media.query.filter(Media.session_id == session_id)
+
+    media_type_filter = request.args.get("media_type", "")
+    graph_tag_filter = request.args.get("graph_tag", "")
+    variable_tag_filter = request.args.get("variable_tag", "")
+    is_graph_filter = request.args.get("is_graph", "")
+    posted_by_filter = request.args.get("posted_by", "")
+
+    if media_type_filter:
+        media_filter_form.media_type.data = media_type_filter
+        media_query = media_query.filter(Media.media_type == media_type_filter)
+    if graph_tag_filter:
+        media_filter_form.graph_tag.data = graph_tag_filter
+        media_query = media_query.filter(Media.graph_tag == graph_tag_filter)
+    if variable_tag_filter:
+        media_filter_form.variable_tag.data = variable_tag_filter
+        media_query = media_query.filter(Media.variable_tag == variable_tag_filter)
+    if is_graph_filter == "true":
+        media_filter_form.is_graph.data = is_graph_filter
+        media_query = media_query.filter(Media.is_graph.is_(True))
+    elif is_graph_filter == "false":
+        media_filter_form.is_graph.data = is_graph_filter
+        media_query = media_query.filter(Media.is_graph.is_(False))
+    if posted_by_filter == "students":
+        media_filter_form.posted_by.data = posted_by_filter
+        media_query = media_query.filter(Media.student_id.isnot(None))
+    elif posted_by_filter == "teacher":
+        media_filter_form.posted_by.data = posted_by_filter
+        media_query = media_query.filter(Media.posted_by_admin_id.isnot(None))
+
+    # Pagination (student view uses same page size)
+    page = request.args.get("page", 1, type=int)
+    per_page = 20
+    media_pagination = media_query.order_by(Media.uploaded_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    media_items = media_pagination.items
+
+    # If student, attach their interaction to each media for selected state
+    viewing_student = None
+    student_id = session.get("student_id")
+    if student_id:
+        viewing_student = Student.query.get(student_id)
+        for item in media_items:
+            interaction = StudentMediaInteraction.query.filter_by(
+                student_id=student_id, media_id=item.id
+            ).first()
+            item.student_interactions = interaction
+
+    has_media_filters = (
+        media_type_filter
+        or graph_tag_filter
+        or variable_tag_filter
+        or is_graph_filter
+        or posted_by_filter
+    )
+
+    return render_template(
+        "sessions/student_view.html",
+        session_data=session_obj,
+        media=media_items,
+        media_filter_form=media_filter_form,
+        media_pagination=media_pagination,
+        has_media_filters=has_media_filters,
+        viewing_student=viewing_student,
+    )
