@@ -14,6 +14,14 @@ This repository currently contains a runnable Flask outline (starter) plus plann
 
 See `docs/features.md` and `docs/FLASK_REWRITE_PLAN.md` for full scope.
 
+## Accounts
+
+See `docs/ACCOUNTS.md` for roles, permissions, and account creation.
+All roles use a unified login at `/login`:
+- Admin/Staff/Teacher authenticate via Flask-Login
+- Observer authenticates via the same form; on success, an observer session is established and redirected to `/observer/dashboard`
+- Logout at `/logout` clears both Flask-Login user and observer session
+
 ## Repository Layout (current)
 - `app.py` — Flask app bootstrap (dev server)
 - `config.py` — Config classes for dev/test/prod

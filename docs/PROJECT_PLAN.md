@@ -33,6 +33,7 @@ Acceptance: Schema creates successfully via `db.create_all()`; seed creates demo
 - [x] Decorators: `@observer_required`, `@student_required` (session-based)
 - [x] Password change (admin/staff/teacher)
 - [x] Role-based navbar and access checks
+- [x] Document account types and creation paths (`docs/ACCOUNTS.md`)
 
 Acceptance: Valid credentials redirect to dashboards; protected routes gated by role; password change persists.
 

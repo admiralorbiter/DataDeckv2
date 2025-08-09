@@ -1,5 +1,5 @@
-from flask import flash, redirect, render_template, url_for
-from flask_login import login_required, login_user, logout_user
+from flask import flash, redirect, render_template, session, url_for
+from flask_login import current_user, login_user, logout_user
 from werkzeug.security import check_password_hash
 
 from forms import LoginForm
@@ -15,15 +15,20 @@ bp = create_blueprint("auth")
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        # Primary: treat form value as email; Fallback: username for backwards comp
+        # Primary: treat form value as email; Fallback: username
         value = form.username.data
         user = User.query.filter_by(email=value).first()
         if not user:
             user = User.query.filter_by(username=value).first()
         if user and check_password_hash(user.password_hash, form.password.data):
+            # Observers use a separate session namespace
+            if user.is_observer():
+                session["observer_id"] = user.id
+                flash("Logged in successfully.", "success")
+                return redirect(url_for("main.observer_dashboard"))
+            # Other roles use Flask-Login
             login_user(user)
             flash("Logged in successfully.", "success")
-            # Redirect by role: admins/staff to admin dashboard; others to home
             if user.is_admin() or user.is_staff():
                 return redirect(url_for("admin.admin_dashboard"))
             return redirect(url_for("main.index"))
@@ -33,8 +38,18 @@ def login():
 
 
 @bp.route("/logout")
-@login_required
 def logout():
-    logout_user()
-    flash("You have been logged out.", "info")
-    return redirect(url_for("main.index"))
+    # Handle observer-only session first
+    if session.get("observer_id"):
+        session.pop("observer_id", None)
+        flash("You have been logged out.", "info")
+        return redirect(url_for("main.index"))
+
+    # If a Flask-Login user is authenticated, log them out
+    if current_user.is_authenticated:
+        logout_user()
+        flash("You have been logged out.", "info")
+        return redirect(url_for("main.index"))
+
+    # Neither observer nor user logged in → mimic @login_required behavior expected
+    return redirect(url_for("auth.login"))

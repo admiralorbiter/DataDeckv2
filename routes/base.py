@@ -15,7 +15,7 @@ def observer_required(f):
     def decorated_function(*args, **kwargs):
         if not session.get("observer_id"):
             flash("Observer login required.", "warning")
-            return redirect(url_for("observer_auth.observer_login"))
+            return redirect(url_for("auth.login"))
         return f(*args, **kwargs)
 
     return decorated_function

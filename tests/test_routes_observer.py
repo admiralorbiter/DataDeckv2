@@ -31,9 +31,7 @@ def test_observer_login_success_redirects_dashboard(app, client):
         db.session.commit()
         make_observer("obs@example.com", "pw", d)
 
-    resp = client.post(
-        "/observer/login", data={"email": "obs@example.com", "password": "pw"}
-    )
+    resp = client.post("/login", data={"username": "obs@example.com", "password": "pw"})
     assert resp.status_code == 302
     assert "/observer/dashboard" in resp.headers["Location"]
 
@@ -46,7 +44,7 @@ def test_observer_login_invalid_credentials(app, client):
         make_observer("bad@example.com", "pw", d)
 
     resp = client.post(
-        "/observer/login", data={"email": "bad@example.com", "password": "wrong"}
+        "/login", data={"username": "bad@example.com", "password": "wrong"}
     )
     # stays on login page (200)
     assert resp.status_code == 200
@@ -55,7 +53,7 @@ def test_observer_login_invalid_credentials(app, client):
 def test_observer_required_redirects_without_session(client):
     resp = client.get("/observer/dashboard")
     assert resp.status_code == 302
-    assert "/observer/login" in resp.headers["Location"]
+    assert "/login" in resp.headers["Location"]
 
 
 def test_observer_school_forbidden_other_district(app, client):
@@ -69,7 +67,7 @@ def test_observer_school_forbidden_other_district(app, client):
         school_id = school.id
 
     # Login observer
-    client.post("/observer/login", data={"email": "obs2@example.com", "password": "pw"})
+    client.post("/login", data={"username": "obs2@example.com", "password": "pw"})
     # Try to access school from a different district
     resp = client.get(f"/observer/schools/{school_id}")
     assert resp.status_code == 403
@@ -97,7 +95,7 @@ def test_observer_school_lists_teachers(app, client):
         db.session.add(t)
         db.session.commit()
 
-    client.post("/observer/login", data={"email": "obs3@example.com", "password": "pw"})
+    client.post("/login", data={"username": "obs3@example.com", "password": "pw"})
     resp = client.get(f"/observer/schools/{school_id}")
     assert resp.status_code == 200
     assert b"teachx@example.com" in resp.data

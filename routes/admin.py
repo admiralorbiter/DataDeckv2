@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash
 from forms import UserCreationForm
 from models.base import db
 from models.district import District
+from models.observer import Observer
 from models.school import School
 from models.user import User
 
@@ -54,14 +55,19 @@ def create_user():
         return redirect(url_for("admin.admin_dashboard"))
 
     try:
-        new_user = User(
-            username=request.form["username"],
-            email=request.form["email"],
-            password_hash=generate_password_hash(request.form["password"]),
-            first_name=request.form["first_name"],
-            last_name=request.form["last_name"],
-            role=User.Role(request.form["role"]),
-        )
+        role_value = request.form["role"]
+        is_observer = role_value == User.Role.OBSERVER.value
+        base_kwargs = {
+            "username": request.form["username"],
+            "email": request.form["email"],
+            "password_hash": generate_password_hash(request.form["password"]),
+            "first_name": request.form["first_name"],
+            "last_name": request.form["last_name"],
+            "role": User.Role(role_value),
+        }
+
+        # Create correct subclass for observer accounts so observer login works
+        new_user = Observer(**base_kwargs) if is_observer else User(**base_kwargs)
         # Optional school/district info (either names or IDs) to satisfy validation
         school_name = request.form.get("school")
         district_name = request.form.get("district")

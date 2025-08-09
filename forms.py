@@ -12,6 +12,7 @@ class LoginForm(FlaskForm):
 
 
 class ObserverLoginForm(FlaskForm):
+    # Kept for backward compatibility with legacy route which now redirects
     email = StringField("Email", validators=[DataRequired(), Email()])
     password = PasswordField("Password", validators=[DataRequired()])
     submit = SubmitField("Login")
