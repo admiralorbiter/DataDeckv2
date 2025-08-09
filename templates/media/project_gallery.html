@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project_title }} - Data Deck Gallery{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Back Button -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ url_for('sessions.session_detail', session_id=project_images[0].session_id) }}"
+               class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Session
+            </a>
+        </div>
+    </div>
+
+    <!-- Project Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dd-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h2 class="mb-2">{{ project_title }}</h2>
+                            <div class="d-flex align-items-center text-muted mb-2">
+                                {% if project_images[0].student %}
+                                    <div class="d-flex align-items-center me-3">
+                                        {% if project_images[0].student.avatar_path %}
+                                            <img src="{{ project_images[0].student.avatar_path }}" alt="{{ project_images[0].student.character_name }}"
+                                                 class="rounded-circle me-2" width="32" height="32">
+                                        {% else %}
+                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                                                 style="width: 32px; height: 32px; font-size: 14px;">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                        {% endif %}
+                                        {{ project_images[0].student.character_name }}
+                                    </div>
+                                {% endif %}
+                                <span class="me-3">
+                                    <i class="fas fa-images"></i> {{ project_images|length }} images
+                                </span>
+                                <span>{{ project_images[0].uploaded_at.strftime('%B %d, %Y') }}</span>
+                            </div>
+                            {% if project_images[0].description %}
+                                <p class="text-muted mb-0">{{ project_images[0].description }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Project Tags -->
+                        {% if project_images[0].is_graph or project_images[0].graph_tag or project_images[0].variable_tag %}
+                            <div class="d-flex flex-wrap gap-2">
+                                {% if project_images[0].is_graph %}
+                                    <span class="badge bg-info fs-6"><i class="fas fa-chart-bar"></i> Graph Content</span>
+                                {% endif %}
+                                {% if project_images[0].graph_tag %}
+                                    <span class="badge bg-primary fs-6">{{ project_images[0].graph_tag.replace('_', ' ').title() }}</span>
+                                {% endif %}
+                                {% if project_images[0].variable_tag %}
+                                    <span class="badge bg-success fs-6">{{ project_images[0].variable_tag }}</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Gallery Carousel -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dd-card">
+                <div id="projectCarousel" class="carousel slide" data-bs-ride="false">
+                    <div class="carousel-inner">
+                        {% for image in project_images %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <div class="d-flex justify-content-center bg-light" style="min-height: 500px;">
+                                {% if image.image_file %}
+                                    <img src="/static/uploads/{{ image.image_file }}"
+                                         class="img-fluid"
+                                         style="max-height: 600px; object-fit: contain;"
+                                         alt="{{ image.title }}">
+                                {% else %}
+                                    <div class="d-flex align-items-center justify-content-center text-muted">
+                                        <i class="fas fa-image fa-4x"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Image Info Overlay -->
+                            <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white p-3">
+                                <div class="d-flex justify-content-between align-items-end">
+                                    <div>
+                                        <h5 class="mb-1">{{ image.title }}</h5>
+                                        {% if image.description and image.description != project_images[0].description %}
+                                            <p class="mb-0 small">{{ image.description }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-end">
+                                        <!-- Reaction counts for this image -->
+                                        <div class="d-flex gap-3">
+                                            <span class="small">
+                                                <i class="fas fa-chart-bar text-primary"></i> {{ image.graph_likes }}
+                                            </span>
+                                            <span class="small">
+                                                <i class="fas fa-eye text-info"></i> {{ image.eye_likes }}
+                                            </span>
+                                            <span class="small">
+                                                <i class="fas fa-book-open text-success"></i> {{ image.read_likes }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Navigation Controls -->
+                    {% if project_images|length > 1 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#projectCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon"></span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#projectCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon"></span>
+                    </button>
+                    {% endif %}
+
+                    <!-- Image Counter -->
+                    <div class="position-absolute top-0 end-0 bg-dark bg-opacity-75 text-white px-3 py-2 m-3 rounded">
+                        <span id="currentImageIndex">1</span> of {{ project_images|length }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thumbnail Gallery -->
+    {% if project_images|length > 1 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dd-card">
+                <div class="card-body">
+                    <h6 class="mb-3"><i class="fas fa-th"></i> All Images in this Data Deck</h6>
+                    <div class="row">
+                        {% for image in project_images %}
+                        <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
+                            <div class="position-relative">
+                                <div class="thumbnail-container"
+                                     onclick="goToSlide({{ loop.index0 }})"
+                                     style="cursor: pointer;">
+                                    {% if image.image_file %}
+                                        <img src="/static/uploads/{{ image.image_file }}"
+                                             class="img-fluid rounded border thumbnail-img"
+                                             style="height: 80px; width: 100%; object-fit: cover;"
+                                             alt="{{ image.title }}">
+                                    {% else %}
+                                        <div class="bg-light rounded border d-flex align-items-center justify-content-center text-muted"
+                                             style="height: 80px;">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    {% endif %}
+
+                                    <!-- Active indicator -->
+                                    <div class="position-absolute top-0 start-0 w-100 h-100 border border-3 border-primary rounded thumbnail-active"
+                                         style="display: {% if loop.first %}block{% else %}none{% endif %}; pointer-events: none;"></div>
+                                </div>
+                                <small class="d-block text-center mt-1 text-muted">{{ loop.index }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Project Actions -->
+    {% if (current_user.is_authenticated and current_user.is_teacher() and project_images[0].session.created_by_id == current_user.id) or
+          (not current_user.is_authenticated and session.get('student_id') == project_images[0].student_id) %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dd-card">
+                <div class="card-body text-center">
+                    <h6 class="mb-3"><i class="fas fa-cogs"></i> Data Deck Actions</h6>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('media.edit_media', media_id=project_images[0].id) }}"
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-edit"></i> Edit Project Info
+                        </a>
+                        <button class="btn btn-outline-danger" onclick="deleteProject()">
+                            <i class="fas fa-trash"></i> Delete Data Deck
+                        </button>
+                    </div>
+                    <div class="small text-muted mt-2">
+                        Editing will affect the main project information. Individual images can be edited from their detail pages.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Project Statistics -->
+    <div class="row">
+        <div class="col-12">
+            <div class="dd-card">
+                <div class="card-body">
+                    <h6 class="mb-3"><i class="fas fa-chart-line"></i> Data Deck Statistics</h6>
+                    <div class="row text-center">
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="h4 text-primary">{{ project_images|length }}</div>
+                            <div class="small text-muted">Total Images</div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="h4 text-info">{{ project_images|sum(attribute='graph_likes') + project_images|sum(attribute='eye_likes') + project_images|sum(attribute='read_likes') }}</div>
+                            <div class="small text-muted">Total Reactions</div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="h4 text-success">{{ project_images|sum(attribute='graph_likes') }}</div>
+                            <div class="small text-muted">Graph Reactions</div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="h4 text-warning">{{ (project_images[0].uploaded_at.date() - project_images[0].uploaded_at.date()).days + 1 }}</div>
+                            <div class="small text-muted">Days Since Upload</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Data Deck</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This will permanently delete the entire Data Deck with all {{ project_images|length }} images.
+                </div>
+                <p>Are you sure you want to delete "<strong>{{ project_title }}</strong>"?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Delete Data Deck</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.thumbnail-img:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+    transition: all 0.2s ease;
+}
+
+.thumbnail-active {
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+</style>
+
+<script>
+// Carousel navigation
+function goToSlide(index) {
+    const carousel = bootstrap.Carousel.getOrCreateInstance(document.getElementById('projectCarousel'));
+    carousel.to(index);
+
+    // Update thumbnail active state
+    document.querySelectorAll('.thumbnail-active').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.thumbnail-active')[index].style.display = 'block';
+}
+
+// Update image counter and thumbnail active state
+document.getElementById('projectCarousel').addEventListener('slide.bs.carousel', function (e) {
+    document.getElementById('currentImageIndex').textContent = e.to + 1;
+
+    // Update thumbnail active state
+    document.querySelectorAll('.thumbnail-active').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.thumbnail-active')[e.to].style.display = 'block';
+});
+
+// Delete project functionality
+function deleteProject() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+document.getElementById('confirmDelete').addEventListener('click', function() {
+    // Delete the first image, which will delete the entire project
+    fetch(`/media/{{ project_images[0].id }}/delete`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '{{ url_for("sessions.session_detail", session_id=project_images[0].session_id) }}';
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the Data Deck.');
+    });
+});
+</script>
+{% endblock %}

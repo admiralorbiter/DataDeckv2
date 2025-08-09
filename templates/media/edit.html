@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ 'Data Deck' if media.is_project else 'Image' }} - {{ media.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Back Button -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ url_for('media.media_detail', media_id=media.id) }}"
+               class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to {{ 'Data Deck' if media.is_project else 'Image' }}
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="dd-card">
+                <div class="card-header bg-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-edit"></i>
+                        Edit {{ 'Data Deck' if media.is_project else 'Image' }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Current Image Preview -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                {% if media.image_file %}
+                                    <img src="/static/uploads/{{ media.image_file }}"
+                                         class="img-fluid rounded border"
+                                         style="max-height: 200px; object-fit: cover;"
+                                         alt="{{ media.title }}">
+                                {% else %}
+                                    <div class="bg-light rounded border d-flex align-items-center justify-content-center text-muted"
+                                         style="height: 200px;">
+                                        <i class="fas fa-image fa-3x"></i>
+                                    </div>
+                                {% endif %}
+                                {% if media.is_project %}
+                                    <small class="text-muted d-block mt-2">
+                                        <i class="fas fa-images"></i> Part of Data Deck
+                                    </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center mb-3">
+                                {% if media.student %}
+                                    {% if media.student.avatar_path %}
+                                        <img src="{{ media.student.avatar_path }}" alt="{{ media.student.character_name }}"
+                                             class="rounded-circle me-3" width="40" height="40">
+                                    {% else %}
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                                             style="width: 40px; height: 40px;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="mb-0">{{ media.student.character_name }}</h6>
+                                        <small class="text-muted">{{ media.uploaded_at.strftime('%B %d, %Y') }}</small>
+                                    </div>
+                                {% else %}
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-chalkboard-teacher fa-2x text-muted me-3"></i>
+                                        <div>
+                                            <h6 class="mb-0">Teacher Upload</h6>
+                                            <small class="text-muted">{{ media.uploaded_at.strftime('%B %d, %Y') }}</small>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Edit Form -->
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+
+                        <!-- Title -->
+                        <div class="mb-4">
+                            {{ form.title.label(class="form-label fw-bold") }}
+                            {{ form.title(class="form-control form-control-lg") }}
+                            {% if form.title.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.title.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.description.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Tags Section -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-tags"></i> Update Categories</h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- Graph Checkbox -->
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.is_graph(class="form-check-input") }}
+                                        {{ form.is_graph.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+
+                                <!-- Graph Type -->
+                                <div class="mb-3" id="graphTypeSection" style="display: {% if media.is_graph %}block{% else %}none{% endif %};">
+                                    {{ form.graph_tag.label(class="form-label") }}
+                                    {{ form.graph_tag(class="form-select") }}
+                                    {% if form.graph_tag.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.graph_tag.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Variables -->
+                                <div class="mb-0">
+                                    {{ form.variable_tag.label(class="form-label") }}
+                                    {{ form.variable_tag(class="form-control") }}
+                                    {% if form.variable_tag.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.variable_tag.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">What data or variables does this visualization show?</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Current Tags Display -->
+                        {% if media.graph_tag or media.variable_tag or media.is_graph %}
+                        <div class="alert alert-info mb-4">
+                            <h6><i class="fas fa-info-circle"></i> Current Tags:</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% if media.is_graph %}
+                                    <span class="badge bg-info fs-6"><i class="fas fa-chart-bar"></i> Graph Content</span>
+                                {% endif %}
+                                {% if media.graph_tag %}
+                                    <span class="badge bg-primary fs-6">{{ media.graph_tag.replace('_', ' ').title() }}</span>
+                                {% endif %}
+                                {% if media.variable_tag %}
+                                    <span class="badge bg-success fs-6">{{ media.variable_tag }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Submit Buttons -->
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn dd-btn-primary btn-lg") }}
+                            <a href="{{ url_for('media.media_detail', media_id=media.id) }}"
+                               class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tips Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-light">
+                <h6><i class="fas fa-lightbulb"></i> Editing Tips:</h6>
+                <ul class="mb-0">
+                    <li><strong>Title:</strong> Make it descriptive and clear</li>
+                    <li><strong>Description:</strong> Explain what your visualization shows and any insights</li>
+                    <li><strong>Tags:</strong> Help others find and understand your work</li>
+                    {% if media.is_project %}
+                        <li><strong>Data Deck:</strong> Changes will apply to this specific image in your project</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isGraphCheck = document.getElementById('is_graph');
+    const graphTypeSection = document.getElementById('graphTypeSection');
+
+    // Show/hide graph type based on checkbox
+    isGraphCheck.addEventListener('change', function() {
+        graphTypeSection.style.display = this.checked ? 'block' : 'none';
+    });
+});
+</script>
+{% endblock %}

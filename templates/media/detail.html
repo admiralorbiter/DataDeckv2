@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}{{ media.title }} - {{ media.student.character_name if media.student else 'Teacher' }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Back Button -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ url_for('sessions.session_detail', session_id=media.session_id) }}"
+               class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Session
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <div class="dd-card">
+                <!-- Header -->
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h2 class="mb-1">{{ media.title }}</h2>
+                            <div class="d-flex align-items-center text-muted">
+                                {% if media.student %}
+                                    <div class="d-flex align-items-center me-3">
+                                        {% if media.student.avatar_path %}
+                                            <img src="{{ media.student.avatar_path }}" alt="{{ media.student.character_name }}"
+                                                 class="rounded-circle me-2" width="24" height="24">
+                                        {% else %}
+                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                                                 style="width: 24px; height: 24px; font-size: 12px;">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                        {% endif %}
+                                        {{ media.student.character_name }}
+                                    </div>
+                                {% else %}
+                                    <span class="me-3"><i class="fas fa-chalkboard-teacher"></i> Teacher</span>
+                                {% endif %}
+                                <small>{{ media.uploaded_at.strftime('%B %d, %Y at %I:%M %p') }}</small>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        {% if (current_user.is_authenticated and current_user.is_teacher() and media.session.created_by_id == current_user.id) or
+                              (not current_user.is_authenticated and session.get('student_id') == media.student_id) %}
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                    data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('media.edit_media', media_id=media.id) }}">
+                                        <i class="fas fa-edit me-2"></i>Edit
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="#" onclick="deleteMedia({{ media.id }})">
+                                        <i class="fas fa-trash me-2"></i>Delete
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Image Display -->
+                <div class="position-relative">
+                    {% if project_images and project_images|length > 1 %}
+                        <!-- Multi-image carousel -->
+                        <div id="mediaCarousel" class="carousel slide" data-bs-ride="false">
+                            <div class="carousel-inner">
+                                {% for img in project_images %}
+                                <div class="carousel-item {% if img.id == media.id %}active{% endif %}">
+                                    <div class="d-flex justify-content-center bg-light" style="min-height: 400px;">
+                                        {% if img.image_file %}
+                                            <img src="/static/uploads/{{ img.image_file }}"
+                                                 class="img-fluid"
+                                                 style="max-height: 600px; object-fit: contain;"
+                                                 alt="{{ img.title }}">
+                                        {% else %}
+                                            <div class="d-flex align-items-center justify-content-center text-muted">
+                                                <i class="fas fa-image fa-3x"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Image Info Overlay -->
+                                    {% if img.description or img.graph_tag or img.variable_tag %}
+                                    <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white p-3">
+                                        {% if img.description %}
+                                            <p class="mb-1">{{ img.description }}</p>
+                                        {% endif %}
+                                        {% if img.graph_tag or img.variable_tag %}
+                                            <div class="d-flex gap-2">
+                                                {% if img.is_graph %}
+                                                    <span class="badge bg-info"><i class="fas fa-chart-bar"></i> Graph</span>
+                                                {% endif %}
+                                                {% if img.graph_tag %}
+                                                    <span class="badge bg-primary">{{ img.graph_tag.replace('_', ' ').title() }}</span>
+                                                {% endif %}
+                                                {% if img.variable_tag %}
+                                                    <span class="badge bg-success">{{ img.variable_tag }}</span>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Navigation Controls -->
+                            <button class="carousel-control-prev" type="button" data-bs-target="#mediaCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon"></span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#mediaCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon"></span>
+                            </button>
+
+                            <!-- Image Counter -->
+                            <div class="position-absolute top-0 end-0 bg-dark bg-opacity-75 text-white px-3 py-1 m-3 rounded">
+                                <span id="currentImageIndex">{{ project_images.index(media) + 1 }}</span> of {{ project_images|length }}
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Single image -->
+                        <div class="d-flex justify-content-center bg-light" style="min-height: 400px;">
+                            {% if media.image_file %}
+                                <img src="/static/uploads/{{ media.image_file }}"
+                                     class="img-fluid"
+                                     style="max-height: 600px; object-fit: contain;"
+                                     alt="{{ media.title }}">
+                            {% else %}
+                                <div class="d-flex align-items-center justify-content-center text-muted">
+                                    <i class="fas fa-image fa-3x"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Media Info -->
+                {% if media.description or media.graph_tag or media.variable_tag %}
+                <div class="card-body border-top">
+                    {% if media.description %}
+                        <p class="mb-3">{{ media.description }}</p>
+                    {% endif %}
+
+                    {% if media.graph_tag or media.variable_tag or media.is_graph %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if media.is_graph %}
+                                <span class="badge bg-info fs-6"><i class="fas fa-chart-bar"></i> Graph Content</span>
+                            {% endif %}
+                            {% if media.graph_tag %}
+                                <span class="badge bg-primary fs-6">{{ media.graph_tag.replace('_', ' ').title() }}</span>
+                            {% endif %}
+                            {% if media.variable_tag %}
+                                <span class="badge bg-success fs-6">{{ media.variable_tag }}</span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Reaction Badges -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="dd-card">
+                        <div class="card-body text-center">
+                            <div class="d-flex justify-content-center gap-4">
+                                <!-- Graph Badge -->
+                                <div class="text-center">
+                                    <div class="position-relative d-inline-block">
+                                        <div class="bg-primary text-white rounded-circle p-3 mb-2" style="width: 60px; height: 60px;">
+                                            <i class="fas fa-chart-bar fa-lg"></i>
+                                        </div>
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                            {{ media.graph_likes }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Eye Badge -->
+                                <div class="text-center">
+                                    <div class="position-relative d-inline-block">
+                                        <div class="bg-info text-white rounded-circle p-3 mb-2" style="width: 60px; height: 60px;">
+                                            <i class="fas fa-eye fa-lg"></i>
+                                        </div>
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                            {{ media.eye_likes }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Read Badge -->
+                                <div class="text-center">
+                                    <div class="position-relative d-inline-block">
+                                        <div class="bg-success text-white rounded-circle p-3 mb-2" style="width: 60px; height: 60px;">
+                                            <i class="fas fa-book-open fa-lg"></i>
+                                        </div>
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                            {{ media.read_likes }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Badge Explanation -->
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <strong>What do these badges mean?</strong><br>
+                                    <i class="fas fa-chart-bar text-primary"></i> Graph •
+                                    <i class="fas fa-eye text-info"></i> Eye •
+                                    <i class="fas fa-book-open text-success"></i> Read
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comments Sidebar -->
+        <div class="col-lg-4">
+            <div class="dd-card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-comments"></i> Comments</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Comments will be implemented in M6 -->
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-comments fa-3x mb-3"></i>
+                        <h6>Comments Coming Soon!</h6>
+                        <p class="small">Comments and discussions will be available in the next update.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this {{ 'Data Deck' if media.is_project else 'image' }}?</p>
+                {% if media.is_project %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        This will delete the entire Data Deck with all its images.
+                    </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let mediaToDelete = null;
+
+function deleteMedia(mediaId) {
+    mediaToDelete = mediaId;
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+document.getElementById('confirmDelete').addEventListener('click', function() {
+    if (mediaToDelete) {
+        fetch(`/media/${mediaToDelete}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '{{ url_for("sessions.session_detail", session_id=media.session_id) }}';
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting.');
+        });
+    }
+});
+
+// Update image counter for carousel
+{% if project_images and project_images|length > 1 %}
+document.getElementById('mediaCarousel').addEventListener('slide.bs.carousel', function (e) {
+    document.getElementById('currentImageIndex').textContent = e.to + 1;
+});
+{% endif %}
+</script>
+{% endblock %}

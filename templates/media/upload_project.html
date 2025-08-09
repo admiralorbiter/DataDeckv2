@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Create Data Deck - {{ student.character_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Student Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    {% if student.avatar_path %}
+                        <img src="{{ student.avatar_path }}" alt="{{ student.character_name }}"
+                             class="rounded-circle" width="50" height="50">
+                    {% else %}
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div>
+                    <h2 class="mb-0">Create a Data Deck</h2>
+                    <p class="text-muted mb-0">{{ student.character_name }} • {{ session_data.name }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="dd-card">
+                <div class="p-4">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-images fa-3x text-primary mb-3"></i>
+                        <h4>Share Your Project</h4>
+                        <p class="text-muted">Upload 1-10 images to create a comprehensive Data Deck</p>
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data" id="projectForm">
+                        {{ form.hidden_tag() }}
+
+                        <!-- Project Title -->
+                        <div class="mb-4">
+                            {{ form.title.label(class="form-label fw-bold") }}
+                            {{ form.title(class="form-control form-control-lg") }}
+                            {% if form.title.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.title.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- File Upload -->
+                        <div class="mb-4">
+                            {{ form.files.label(class="form-label fw-bold") }}
+                            {{ form.files(class="form-control form-control-lg", accept="image/*", multiple=True) }}
+                            {% if form.files.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.files.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="fas fa-info-circle"></i>
+                                Select 1-10 images • Accepted formats: JPG, PNG, GIF, WebP (Max: 10MB each)
+                            </div>
+                        </div>
+
+                        <!-- Image Previews -->
+                        <div id="imagePreviews" class="mb-4" style="display: none;">
+                            <h6>Selected Images:</h6>
+                            <div class="row" id="previewContainer"></div>
+                        </div>
+
+                        <!-- Project Description -->
+                        <div class="mb-4">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.description.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Tags Section -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-tags"></i> Categorize Your Data Deck</h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- Graph Checkbox -->
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.is_graph(class="form-check-input") }}
+                                        {{ form.is_graph.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+
+                                <!-- Graph Type -->
+                                <div class="mb-3" id="graphTypeSection" style="display: none;">
+                                    {{ form.graph_tag.label(class="form-label") }}
+                                    {{ form.graph_tag(class="form-select") }}
+                                </div>
+
+                                <!-- Variables -->
+                                <div class="mb-0">
+                                    {{ form.variable_tag.label(class="form-label") }}
+                                    {{ form.variable_tag(class="form-control") }}
+                                    <div class="form-text">What main data or variables does your project analyze?</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn dd-btn-primary btn-lg", id="submitBtn") }}
+                            <a href="{{ url_for('sessions.session_detail', session_id=session_data.id) }}"
+                               class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Session
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Deck Tips -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-success">
+                <h6><i class="fas fa-star"></i> Data Deck Tips:</h6>
+                <ul class="mb-0">
+                    <li><strong>Tell a story:</strong> Arrange your images to show your data analysis process</li>
+                    <li><strong>Include variety:</strong> Raw data, charts, insights, and conclusions</li>
+                    <li><strong>Quality over quantity:</strong> 3-5 well-chosen images often work better than 10</li>
+                    <li><strong>Add context:</strong> Use the description to explain your findings</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filesInput = document.getElementById('files');
+    const imagePreviews = document.getElementById('imagePreviews');
+    const previewContainer = document.getElementById('previewContainer');
+    const isGraphCheck = document.getElementById('is_graph');
+    const graphTypeSection = document.getElementById('graphTypeSection');
+    const submitBtn = document.getElementById('submitBtn');
+    const projectForm = document.getElementById('projectForm');
+
+    // Image previews
+    filesInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        previewContainer.innerHTML = '';
+
+        if (files.length > 0) {
+            if (files.length > 10) {
+                alert('You can only select up to 10 images. Only the first 10 will be used.');
+                files.splice(10);
+            }
+
+            imagePreviews.style.display = 'block';
+
+            files.forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const col = document.createElement('div');
+                        col.className = 'col-6 col-md-4 col-lg-3 mb-3';
+                        col.innerHTML = `
+                            <div class="position-relative">
+                                <img src="${e.target.result}" class="img-fluid rounded border" style="height: 120px; width: 100%; object-fit: cover;">
+                                <span class="position-absolute top-0 start-0 badge bg-primary m-1">${index + 1}</span>
+                            </div>
+                            <small class="text-muted d-block mt-1">${file.name}</small>
+                        `;
+                        previewContainer.appendChild(col);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        } else {
+            imagePreviews.style.display = 'none';
+        }
+    });
+
+    // Show/hide graph type based on checkbox
+    isGraphCheck.addEventListener('change', function() {
+        graphTypeSection.style.display = this.checked ? 'block' : 'none';
+    });
+
+    // Form submission with loading state
+    projectForm.addEventListener('submit', function(e) {
+        const files = filesInput.files;
+        if (files.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one image for your Data Deck.');
+            return;
+        }
+
+        if (files.length > 10) {
+            e.preventDefault();
+            alert('You can only upload up to 10 images per Data Deck.');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Data Deck...';
+    });
+});
+</script>
+{% endblock %}

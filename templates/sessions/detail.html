@@ -80,6 +80,41 @@
     </div>
     {% endif %}
 
+    <!-- Student Upload Section -->
+    {% if viewing_student %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dd-card">
+                <div class="p-3">
+                    <h5 class="mb-3"><i class="fas fa-cloud-upload-alt"></i> Share Your Work</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="text-center">
+                                <i class="fas fa-upload fa-2x text-primary mb-2"></i>
+                                <h6>Upload Single Image</h6>
+                                <p class="text-muted small mb-3">Share one visualization quickly</p>
+                                <a href="{{ url_for('media.upload_single') }}" class="btn btn-primary">
+                                    <i class="fas fa-upload me-1"></i>Upload Image
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <i class="fas fa-images fa-2x text-success mb-2"></i>
+                                <h6>Create Data Deck</h6>
+                                <p class="text-muted small mb-3">Build a project with multiple images</p>
+                                <a href="{{ url_for('media.upload_project') }}" class="btn btn-success">
+                                    <i class="fas fa-images me-1"></i>Create Data Deck
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Action Buttons -->
     {% if current_user.is_authenticated and (current_user.is_teacher() and session_data.created_by_id == current_user.id or current_user.is_admin() or current_user.is_staff()) %}
     <div class="row mb-4">
@@ -246,11 +281,11 @@
                 <div class="p-3">
                     {% if media %}
                         {% for item in media %}
-                        <div class="dd-card mb-2">
+                        <div class="dd-card mb-2" style="cursor: pointer;" onclick="window.location.href='{{ url_for('media.media_detail', media_id=item.id) }}'">
                             <div class="p-2">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="flex-grow-1">
-                                        <h6 class="mb-1">{{ item.title }}</h6>
+                                        <h6 class="mb-1 text-primary">{{ item.title }}</h6>
                                         <small class="text-muted">
                                             {% if item.student %}
                                                 by {{ item.student.character_name }}
@@ -267,17 +302,23 @@
                                                 <span class="badge bg-primary me-1">Graph</span>
                                             {% endif %}
                                             {% if item.graph_tag %}
-                                                <span class="badge bg-info me-1">{{ item.graph_tag }}</span>
+                                                <span class="badge bg-info me-1">{{ item.graph_tag.replace('_', ' ').title() }}</span>
                                             {% endif %}
                                             {% if item.variable_tag %}
                                                 <span class="badge bg-success me-1">{{ item.variable_tag }}</span>
+                                            {% endif %}
+                                            {% if item.is_project %}
+                                                <span class="badge bg-warning me-1"><i class="fas fa-images"></i> Data Deck</span>
                                             {% endif %}
                                         </div>
                                     </div>
                                     <div class="text-end">
                                         <small class="text-muted">
-                                            <i class="fas fa-thumbs-up"></i> {{ item.graph_likes + item.eye_likes + item.read_likes }}
+                                            <i class="fas fa-heart text-danger"></i> {{ item.graph_likes + item.eye_likes + item.read_likes }}
                                         </small>
+                                        <div class="mt-1">
+                                            <i class="fas fa-eye text-muted" title="Click to view"></i>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

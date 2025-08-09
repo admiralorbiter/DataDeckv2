@@ -1,13 +1,25 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileAllowed, FileRequired
 from wtforms import (
+    BooleanField,
     DateField,
+    FileField,
     IntegerField,
+    MultipleFileField,
     PasswordField,
     SelectField,
     StringField,
     SubmitField,
+    TextAreaField,
 )
-from wtforms.validators import DataRequired, Email, EqualTo, NumberRange, Optional
+from wtforms.validators import (
+    DataRequired,
+    Email,
+    EqualTo,
+    Length,
+    NumberRange,
+    Optional,
+)
 
 from models import db
 from models.district import District
@@ -304,3 +316,143 @@ class MediaFilterForm(FlaskForm):
         variable_choices = [("", "All Variable Tags")]
         variable_choices.extend([(tag[0], tag[0]) for tag in variable_tags])
         self.variable_tag.choices = variable_choices
+
+
+class SingleMediaUploadForm(FlaskForm):
+    """Form for uploading a single media item."""
+
+    file = FileField(
+        "Choose Image",
+        validators=[
+            FileRequired("Please select an image to upload."),
+            FileAllowed(["jpg", "jpeg", "png", "gif", "webp"], "Images only!"),
+        ],
+    )
+
+    title = StringField(
+        "Title",
+        validators=[Optional(), Length(max=255)],
+        render_kw={"placeholder": "Leave blank to auto-generate from tags"},
+    )
+
+    description = TextAreaField(
+        "Description",
+        validators=[Optional(), Length(max=1000)],
+        render_kw={
+            "placeholder": "Tell us about your data visualization...",
+            "rows": 3,
+        },
+    )
+
+    # Tags for categorization
+    is_graph = BooleanField("This is a graph/chart")
+
+    graph_tag = SelectField(
+        "Graph Type",
+        choices=[
+            ("", "Select graph type (optional)"),
+            ("bar_chart", "Bar Chart"),
+            ("line_graph", "Line Graph"),
+            ("pie_chart", "Pie Chart"),
+            ("scatter_plot", "Scatter Plot"),
+            ("histogram", "Histogram"),
+            ("box_plot", "Box Plot"),
+            ("other", "Other Graph Type"),
+        ],
+        validators=[Optional()],
+    )
+
+    variable_tag = StringField(
+        "Variables Shown",
+        validators=[Optional(), Length(max=64)],
+        render_kw={"placeholder": "e.g., Temperature, Sales, Population"},
+    )
+
+    submit = SubmitField("Upload Image")
+
+
+class ProjectGalleryUploadForm(FlaskForm):
+    """Form for uploading a project gallery (Data Deck) with multiple images."""
+
+    files = MultipleFileField(
+        "Choose Images (1-10)",
+        validators=[
+            FileRequired("Please select at least one image."),
+            FileAllowed(["jpg", "jpeg", "png", "gif", "webp"], "Images only!"),
+        ],
+    )
+
+    title = StringField(
+        "Project Title",
+        validators=[DataRequired(), Length(min=3, max=255)],
+        render_kw={"placeholder": "e.g., Climate Data Analysis Project"},
+    )
+
+    description = TextAreaField(
+        "Project Description",
+        validators=[Optional(), Length(max=1000)],
+        render_kw={
+            "placeholder": "Describe your data deck project and insights...",
+            "rows": 4,
+        },
+    )
+
+    # Tags for the entire project
+    is_graph = BooleanField("This project contains graphs/charts")
+
+    graph_tag = SelectField(
+        "Primary Graph Type",
+        choices=[
+            ("", "Select primary graph type (optional)"),
+            ("bar_chart", "Bar Chart"),
+            ("line_graph", "Line Graph"),
+            ("pie_chart", "Pie Chart"),
+            ("scatter_plot", "Scatter Plot"),
+            ("histogram", "Histogram"),
+            ("box_plot", "Box Plot"),
+            ("mixed", "Multiple Graph Types"),
+            ("other", "Other Graph Type"),
+        ],
+        validators=[Optional()],
+    )
+
+    variable_tag = StringField(
+        "Main Variables",
+        validators=[Optional(), Length(max=64)],
+        render_kw={"placeholder": "e.g., Temperature vs Time, Sales by Region"},
+    )
+
+    submit = SubmitField("Create Data Deck")
+
+
+class MediaEditForm(FlaskForm):
+    """Form for editing media metadata and tags."""
+
+    title = StringField("Title", validators=[DataRequired(), Length(min=1, max=255)])
+
+    description = TextAreaField(
+        "Description", validators=[Optional(), Length(max=1000)], render_kw={"rows": 3}
+    )
+
+    is_graph = BooleanField("This is a graph/chart")
+
+    graph_tag = SelectField(
+        "Graph Type",
+        choices=[
+            ("", "Select graph type (optional)"),
+            ("bar_chart", "Bar Chart"),
+            ("line_graph", "Line Graph"),
+            ("pie_chart", "Pie Chart"),
+            ("scatter_plot", "Scatter Plot"),
+            ("histogram", "Histogram"),
+            ("box_plot", "Box Plot"),
+            ("other", "Other Graph Type"),
+        ],
+        validators=[Optional()],
+    )
+
+    variable_tag = StringField(
+        "Variables Shown", validators=[Optional(), Length(max=64)]
+    )
+
+    submit = SubmitField("Update Media")

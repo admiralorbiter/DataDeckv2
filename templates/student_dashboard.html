@@ -41,6 +41,17 @@
           <a class="btn dd-btn-primary btn-lg" href="{{ url_for('sessions.session_detail', session_id=student.section.id) }}">
             <i class="fas fa-arrow-right me-2"></i>Go to My Session
           </a>
+
+          <!-- Quick Upload Actions -->
+          <div class="btn-group mt-2" role="group">
+            <a href="{{ url_for('media.upload_single') }}" class="btn btn-outline-primary">
+              <i class="fas fa-upload me-1"></i>Upload Image
+            </a>
+            <a href="{{ url_for('media.upload_project') }}" class="btn btn-outline-success">
+              <i class="fas fa-images me-1"></i>Create Data Deck
+            </a>
+          </div>
+
           <small class="text-muted mt-2">
             Session: {{ student.section.name }}
             {% if student.section.module %}

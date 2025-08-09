@@ -114,13 +114,28 @@ Acceptance: ✅ **COMPLETE** - All core session management features implemented:
 
 **Acceptance: ✅ ACHIEVED** - All CRUD operations work; PDF generation functional; Analytics display engagement data; Bulk operations provide smooth UX; Portfolio shows student work and progress.
 
-#### M5 — Media
-- [ ] Upload image (validate type/size), generate title from tags
-- [ ] Edit tags and recompute title
-- [ ] Delete media (permission + file removal)
-- [ ] Project upload (min 3 images) with gallery view
+#### M5 — Media ✅ **COMPLETED**
+- [x] Upload image (validate type/size), generate title from tags ✅
+- [x] Edit tags and recompute title ✅
+- [x] Delete media (permission + file removal) ✅
+- [x] Project upload (1-10 images) with gallery view ✅
+- [x] Student-centric upload interfaces with Data Deck branding ✅
+- [x] Image carousel navigation with thumbnails ✅
+- [x] Comprehensive media management (view, edit, delete) ✅
+- [x] Upload statistics and portfolio views ✅
+- [x] Robust file validation and security checks ✅
 
-Acceptance: Upload persists; edit updates title; delete removes DB row and file; gallery renders.
+**Implementation Complete:**
+- ✅ `MediaService` class with comprehensive business logic
+- ✅ Student upload forms (single image + Data Deck projects)
+- ✅ Media routes blueprint with full CRUD operations
+- ✅ Beautiful, responsive templates with image carousels
+- ✅ Integration with existing student/teacher workflows
+- ✅ Navigation enhancements and portfolio views
+- ✅ Security and validation (file types, sizes, ownership)
+- ✅ Enhanced user experience with progress indicators
+
+**Acceptance: ✅ ACHIEVED** - Upload persists with validation; edit updates title and tags; delete removes with permissions; gallery renders with navigation; Data Deck projects support 1-10 images; student-friendly interfaces integrated.
 
 #### M6 — Posts & Comments
 - [ ] Post detail shows media, poster, counts
