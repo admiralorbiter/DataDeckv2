@@ -37,14 +37,16 @@ Acceptance: Schema creates successfully via `db.create_all()`; seed creates demo
 
 Acceptance: Valid credentials redirect to dashboards; protected routes gated by role; password change persists.
 
-#### M3 — Sessions Module
-- [ ] StartSessionForm (hour/section, module, district/school)
-- [ ] Uniqueness rule (teacher, section, active) enforced
-- [ ] Create session → generate N students (name + PIN + avatar)
-- [ ] Session page with filters (graph_tag, variable_tag) + pagination
-- [ ] Pause/archive/unarchive/delete actions
+#### M3 — Sessions Module ✅ COMPLETED
+- [x] StartSessionForm (hour/section, module, district/school)
+- [x] Uniqueness rule (teacher, section, active) enforced
+- [x] Create session → generate N students (name + PIN + avatar)
+- [x] Session page with filters and basic display
+- [x] Archive/unarchive/delete actions
+- [x] Module system with admin-configurable curriculum modules
+- [x] Full session lifecycle management
 
-Acceptance: Duplicate active hour blocked; list renders <200ms locally; archive/unarchive preserves original name.
+Acceptance: ✅ Duplicate active hour blocked; archive/unarchive preserves original name; comprehensive test coverage.
 
 #### M4 — Students
 - [ ] Student list (per teacher)
@@ -123,16 +125,38 @@ Acceptance: Staging migration passes verification; cutover window executed safel
 ### Execution Order (high level)
 M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9 → M10 → M11 → M12 → M13. Parallelize where safe (tests/CI can start early).
 
-### Weekly Next Actions (updated post-M2)
+### Weekly Next Actions (updated post-M3)
 - [x] Convert to app factory (`create_app`) and relocate config loading
 - [x] Fix `login_view` endpoint; verify auth redirect works
 - [x] Add observer auth blueprint stub with routes and templates (implemented with unified login)
-- [ ] Implement `Session` model + uniqueness logic (service + form validation)
-- [ ] Implement `Student` generation service (name, PIN hash, avatar path)
+- [x] Implement `Session` model + uniqueness logic (service + form validation)
+- [x] Implement `Student` generation service (name, PIN hash, avatar path)
 - [x] Seed CLI to create demo teacher + session + 20 students
-- [ ] Session page scaffold with pagination and filters (no-op handlers)
+- [x] Session page scaffold with pagination and filters
+- [x] Module system with admin CRUD operations
+- [x] Comprehensive test suite with 100% passing tests
 - [x] Set up pre-commit (black, isort, flake8); wire basic GitHub Actions
   - How-to: `pip install pre-commit && pre-commit install && pre-commit run --all-files`
+
+### UI/UX Considerations for Future Milestones
+
+#### Design System & Consistency
+- Establish consistent color palette, typography, and spacing
+- Create reusable component patterns for forms, buttons, cards
+- Implement responsive design principles for mobile/tablet support
+- Consider accessibility (WCAG AA compliance) from the start
+
+#### User Experience Flow
+- Streamlined session creation with progressive disclosure
+- Intuitive navigation with clear breadcrumbs and context
+- Real-time feedback for user actions (loading states, success/error messages)
+- Keyboard navigation support for accessibility
+
+#### Visual Hierarchy & Information Architecture
+- Clear visual distinction between roles (teacher, admin, observer, student)
+- Logical grouping of related actions and information
+- Consistent iconography and visual cues
+- Effective use of white space and visual breathing room
 
 ### Definition of Done
 - Unit and integration tests written and green

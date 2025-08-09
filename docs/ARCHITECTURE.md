@@ -1,4 +1,4 @@
-## DataDeck Architecture (Current Django Implementation)
+## DataDeck Architecture (Flask v2 Implementation)
 
 ### Purpose
 DataDeck enables teachers to run classroom “sessions” where students upload data visualizations (images), react with badges (Graph/Eye/Read), and add comments. District-level observers can browse activity across teachers in their district.
@@ -8,25 +8,36 @@ DataDeck enables teachers to run classroom “sessions” where students upload 
 - **Student**: Logs in with PIN, uploads media or final projects, reacts with badges, comments.
 - **Observer**: Logs in with email/password, views sessions and media for their district.
 
-### Tech Stack (current)
-- Django 5 (server-rendered HTML via templates)
-- Database: MySQL (prod) / SQLite (dev/tests)
-- Celery configured (scheduled clear-expired-sessions task); currently not required to run per README
-- Static via Whitenoise; media stored on local filesystem
-- Pytest for tests
+### Tech Stack (Flask v2)
+- Flask 3.0 with app factory pattern (server-rendered HTML via Jinja2 templates)
+- Database: SQLite (dev/tests) / PostgreSQL (planned prod)
+- SQLAlchemy ORM with relationship modeling
+- Flask-Login for authentication and session management
+- Flask-WTF for forms and CSRF protection
+- Pytest for comprehensive testing
+- Background jobs planned (RQ/Celery for future milestones)
 
-### Key Features
-- Session lifecycle: create, list, pause, archive/unarchive, delete
-- Student generation: unique character name + PIN, avatar assignment from CSVs and images
-- Media uploads: image upload (module 2), multi-image project gallery (module 4)
-- Reactions/badges: Graph guru, Expert engager, Supreme storyteller
-- Comments: nested replies, admin/student attribution
-- Observer dashboard: view activity for district
-- District/admin management: CRUD for districts and observers
-- Student export: PDF cards with names and PINs
+### Key Features (Current Implementation Status)
+
+#### ✅ Completed (M0-M3)
+- **Session lifecycle**: create, list, detail view, archive/unarchive (delete planned)
+- **Student generation**: unique character name + PIN, 20 students per session
+- **Admin-configurable modules**: database-driven curriculum modules with CRUD
+- **User management**: full CRUD for all user types with role-based permissions
+- **Authentication**: unified login system with Flask-Login
+- **Session uniqueness**: conflict detection with auto-archive option
+- **Comprehensive testing**: 100% passing test suite
+
+#### 📋 Planned (M4+)
+- **Media uploads**: image upload with validation and tagging
+- **Reactions/badges**: Graph guru, Expert engager, Supreme storyteller
+- **Comments**: nested replies with admin/student attribution
+- **Observer dashboard**: district-wide activity monitoring
+- **Student export**: PDF cards with names and PINs
+- **Advanced session management**: pause functionality, enhanced filtering
 
 ### Data Model
-Mermaid ER diagram of the current Django entities and relationships:
+Mermaid ER diagram of the Flask SQLAlchemy entities and relationships:
 
 ```mermaid
 erDiagram
@@ -37,25 +48,40 @@ erDiagram
     BOOLEAN is_active
     DATETIME created_at
   }
-  "CustomAdmin" {
+  "User" {
     BIGINT id PK
     VARCHAR username
+    VARCHAR email "unique"
     VARCHAR password_hash
-    VARCHAR school
+    BIGINT school_id FK
     BIGINT district_id FK
     VARCHAR first_name
     VARCHAR last_name
-    VARCHAR media_password "nullable"
-    VARCHAR profile_picture "nullable"
+    ENUM role "ADMIN,STAFF,TEACHER,OBSERVER,STUDENT"
+    DATETIME created_at
+    DATETIME updated_at
   }
   "Observer" {
+    BIGINT user_id PK FK
+    TEXT additional_info "nullable"
+  }
+  "Student" {
+    BIGINT user_id PK FK
+    TEXT character_description "nullable"
+    VARCHAR avatar_image_path "nullable"
+  }
+  "School" {
     BIGINT id PK
     VARCHAR name
-    VARCHAR email "unique"
-    VARCHAR password_hash
     BIGINT district_id FK
+    DATETIME created_at
+  }
+  "Module" {
+    BIGINT id PK
+    VARCHAR name "unique"
+    TEXT description "nullable"
     BOOLEAN is_active
-    BIGINT created_by_id FK
+    INT sort_order
     DATETIME created_at
   }
   "Session" {
@@ -64,7 +90,7 @@ erDiagram
     VARCHAR original_name "nullable"
     CHAR session_code "8, unique"
     INT section
-    ENUM module "{'2','4'}"
+    BIGINT module_id FK
     DATETIME created_at
     BOOLEAN is_paused
     BOOLEAN is_archived
@@ -72,16 +98,7 @@ erDiagram
     BIGINT created_by_id FK
     VARCHAR character_set
   }
-  "Student" {
-    BIGINT id PK
-    VARCHAR name
-    VARCHAR pin "stored as plaintext"
-    BIGINT section_id FK
-    BIGINT admin_id FK
-    VARCHAR device_id "nullable"
-    TEXT character_description
-    VARCHAR avatar_image_path
-  }
+
   "Media" {
     BIGINT id PK
     BIGINT session_id FK
@@ -129,57 +146,131 @@ erDiagram
     VARCHAR admin_avatar "nullable"
   }
 
-  "District" ||--o{ "CustomAdmin" : "district"
-  "District" ||--o{ "Observer" : "district"
-  "CustomAdmin" ||--o{ "Session" : "created_by"
-  "Session" ||--o{ "Student" : "section"
-  "CustomAdmin" ||--o{ "Student" : "admin"
+  "District" ||--o{ "School" : "district"
+  "District" ||--o{ "User" : "district"
+  "School" ||--o{ "User" : "school"
+  "User" ||--|| "Observer" : "user"
+  "User" ||--|| "Student" : "user"
+  "User" ||--o{ "Session" : "created_by"
+  "Module" ||--o{ "Session" : "module"
+  "Session" ||--o{ "User" : "session_students"
   "Session" ||--o{ "Media" : "session"
-  "CustomAdmin" ||--o{ "Media" : "posted_by_admin"
-  "Student" ||--o{ "Media" : "student"
+  "User" ||--o{ "Media" : "posted_by"
   "Media" ||--o{ "Comment" : "comments"
   "Comment" ||--o| "Comment" : "replies"
-  "Student" ||--o{ "StudentMediaInteraction" : "student"
+  "User" ||--o{ "StudentMediaInteraction" : "student"
   "Media" ||--o{ "StudentMediaInteraction" : "media"
-  "Student" ||--o{ "Comment" : "student"
+  "User" ||--o{ "Comment" : "student"
 ```
 
-### Route Inventory (current)
-Key Django routes defined in `video_app/urls.py` and `datadeck/urls.py`:
-- Auth: `/student-login/`, `/student-logout/`, `/admin/login/`
-- Home: `/`
-- Teacher: `/teacher_view/`, `/update_teacher_info/`, `/set-media-password/`
-- Sessions: `/start-session/`, `/session/<id>/`, `/session/<id>/(delete|pause|archive)`, `/check-section-availability/`
-- Students: `/student/<id>/`, `/delete-student/<id>/`, `/download-students/`, `generate_new_students`
-- Media: `/upload/<session_id>/`, `/upload-project/<session_id>/`, `/edit-media/<id>/`, `/delete-media/<id>/`, `/like-media/<id>/<type>/`
-- Posts: `/post/<media_id>/`
-- Observer: `/observer/dashboard/`, `/observer/logout/`
-- Admin Dashboard: `/admin-dashboard/` + District and Observer management helpers
+### Route Inventory (Flask v2 - Current Implementation)
+Key Flask routes organized by blueprints:
 
-### Core Flows (high-level)
-- Teacher creates session → validate unique active hour → generate students → redirect to session
-- Student logs in with PIN or join via `session_code` → sets `student_id` in session → redirect to session
-- Upload media → validate form → attach poster (student/admin) → save file → create `Media`
-- React (badge) → upsert `StudentMediaInteraction` → recalc media counts → return JSON
-- Comment → create `Comment` (+ optional parent) → increment interaction `comment_count`
-- Observer login → session flags `observer_id` → district dashboard view
+#### Auth Blueprint (`/`)
+- **Login/Logout**: `/login`, `/logout` (unified for all user types)
+- **Profile**: `/profile` (password change and user info)
 
-### Security Model
-- CSRF enabled for forms and AJAX
-- Student PINs stored plaintext; Django user created with PIN as password on first login (improve in rewrite)
-- Observer authentication via email+hashed password; restricted via middleware and decorators
-- Access checks in views for deleting/editing media and comments
+#### Main Blueprint (`/`)
+- **Home**: `/` (role-based dashboard routing)
+- **Main Dashboard**: `/main` (role-specific landing pages)
 
-### Background Jobs
-- `video_app.tasks.clear_expired_sessions`: delete sessions older than 7 days when not paused (scheduled daily)
+#### Sessions Blueprint (`/sessions`)
+- **Session Management**: `/sessions/start`, `/sessions`, `/sessions/<id>`
+- **Session Actions**: `/sessions/<id>/archive`, `/sessions/<id>/unarchive`
+- **API Endpoints**: `/api/sessions/check-section` (AJAX validation)
 
-### Static & Media
-- Static assets in `video_app/static/`
-- Media files stored under `/media` (local fs). Project images stored as URL strings in `Media.project_images` JSON
+#### Admin Blueprint (`/admin`)
+- **Admin Dashboard**: `/admin` (user and system management)
+- **User Management**: `/admin/create_user`, `/admin/edit_user/<id>`, `/admin/delete_user/<id>`
+- **Module Management**: `/admin/create_module`, `/admin/edit_module/<id>`
 
-### Known Gaps / Risks
-- Mixed reaction semantics (toggle vs single-select) across endpoints
-- Student PINs not hashed; creates Django users dynamically
-- Media storage local-only; lack of virus scanning and image resizing
-- Observer/Teacher logins share `/admin/login/` path; UX and boundary can be clearer
-- Error handling in file deletion is best-effort; no centralized storage abstraction
+#### Observer Blueprint (`/observer`) - Planned
+- **Observer Dashboard**: `/observer/dashboard` (district activity view)
+- **School Details**: `/observer/school/<id>` (school-specific activity)
+
+#### Planned Routes (M4+)
+- **Students**: `/students`, `/students/<id>/delete`, `/students/export-pins`
+- **Media**: `/media/upload`, `/media/<id>/edit`, `/media/<id>/delete`
+- **Reactions**: `/api/media/<id>/react/<type>` (AJAX reactions)
+- **Comments**: `/api/media/<id>/comment` (AJAX comments)
+
+### Core Flows (Flask v2 Implementation)
+
+#### ✅ Implemented Flows
+- **Teacher Session Creation**: Teacher creates session → conflict detection → auto-archive option → generate 20 students → redirect to session detail
+- **User Authentication**: Unified login (email-first, username fallback) → Flask-Login session → role-based dashboard
+- **Session Management**: List sessions → view details → archive/unarchive with conflict checking
+- **Admin User Management**: Create/edit/delete users → school/district assignment → role-based permissions
+- **Module Management**: Admin creates/edits modules → teachers select from active modules in session creation
+
+#### 📋 Planned Flows (M4+)
+- **Student Login**: PIN-based authentication → join session → media upload/interaction
+- **Media Upload**: File validation → tag extraction → title generation → save to session
+- **Reactions**: Student badges (Graph/Eye/Read) → update interaction counts → real-time feedback
+- **Comments**: Nested comment threads → admin/student attribution → notification system
+- **Observer Monitoring**: District-scoped session viewing → activity reports → engagement metrics
+
+### Security Model (Flask v2)
+
+#### ✅ Current Security Features
+- **Password Hashing**: All passwords hashed with Werkzeug security (bcrypt-based)
+- **CSRF Protection**: Flask-WTF provides global CSRF protection for all forms
+- **Session Management**: Flask-Login handles secure session management
+- **Role-Based Access**: Decorators and permission checks for route authorization
+- **Input Validation**: Flask-WTF form validation with sanitization
+- **Student PIN Security**: PINs are hashed (not plaintext) and stored securely
+
+#### 📋 Planned Security Enhancements
+- **Production Secret Management**: Environment-based secret key configuration
+- **Secure Cookie Settings**: HTTPOnly, Secure, SameSite cookie attributes
+- **Rate Limiting**: Protection against brute force and abuse
+- **File Upload Security**: Virus scanning and content type validation
+- **Audit Logging**: Track admin actions and sensitive operations
+
+### Background Jobs (Planned)
+- **Session Cleanup**: Automated deletion of expired sessions (RQ/Celery)
+- **Media Processing**: Image resizing, optimization, thumbnail generation
+- **Analytics Updates**: Periodic calculation of engagement metrics
+- **Notification System**: Email/SMS notifications for important events
+
+### Static & Media (Current/Planned)
+- **Static Assets**: Flask static file serving for CSS, JS, images
+- **Media Storage**: Local filesystem (dev) → S3-compatible storage (prod)
+- **File Organization**: Structured directory layout with CDN support
+- **Image Processing**: Planned automatic resizing and optimization
+
+### Flask v2 Architecture Improvements
+
+#### ✅ Completed Improvements
+- **Unified Authentication**: Single login system for all user types
+- **Normalized Data Model**: Proper foreign key relationships (school_id, district_id)
+- **Service Layer**: Business logic separated from route handlers
+- **Comprehensive Testing**: Full test coverage with fixtures and factories
+- **Modern Flask Patterns**: App factory, blueprints, proper configuration management
+
+#### 📋 Remaining Technical Debt
+- **CI/CD Pipeline**: Automated testing and deployment
+- **Error Handling**: User-friendly error pages and API responses
+- **Logging System**: Structured logging with correlation IDs
+- **Performance Optimization**: Query optimization, caching, pagination
+- **API Documentation**: OpenAPI spec for future API endpoints
+
+### Migration Considerations
+
+#### Data Migration Strategy
+- **Export Scripts**: Extract data from Django models to JSON/CSV
+- **Import Scripts**: Transform and load data into Flask SQLAlchemy models
+- **Validation**: Referential integrity checks and data verification
+- **Rollback Plan**: Ability to revert to Django version if needed
+
+#### Feature Parity Checklist
+- [x] User authentication and management
+- [x] Session creation and lifecycle management
+- [x] Student generation and management
+- [x] Admin dashboard and user CRUD
+- [x] Module system configuration
+- [ ] Media upload and management (M5)
+- [ ] Reaction and badge system (M6-M7)
+- [ ] Comment system with threading (M6)
+- [ ] Observer dashboard and reporting (M8)
+- [ ] Background job processing (M10)

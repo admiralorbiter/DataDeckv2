@@ -2,13 +2,13 @@
 
 Date: December 2024
 
-**Status**: M0 and M1 complete. Session uniqueness and admin user creation fixes implemented. Ready for M3.
+**Status**: M0, M1, M2, and M3 complete. Session management, admin user creation, module system, and comprehensive testing implemented. Ready for M4.
 
 ### Executive summary
 
 - **M0/M1 are complete and solid**: App factory, blueprints, CSRF, auth scaffolding, and core models are implemented. Seed script, observer flow, and admin dashboard exist with full CRUD operations.
 - **Major fixes completed**: Session uniqueness enforcement with hybrid auto-archive, admin user creation with proper school/district handling, unified login documentation, admin-configurable Module system implementation.
-- **Ready for M3**: Core infrastructure is stable, tested, and documented. Session creation flow is fully functional with conflict resolution.
+- **Ready for M4**: Core infrastructure is stable, tested, and documented. Session creation flow, admin module management, and comprehensive test suite are fully functional.
 
 ### M0 — Bootstrap & Tooling
 
@@ -137,22 +137,24 @@ Date: December 2024
 - Prefer in-memory DB for tests: set `TestingConfig.SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"`.
 - Run tests: `pytest -q -rA -s`.
 
-### Next steps (M3 readiness)
+### Next steps (M4 readiness)
 
-**Status**: Ready to proceed with M3 - Sessions Module implementation.
+**Status**: Ready to proceed with M4 - Students Module implementation.
 
 **Completed foundation**:
 - ✅ Session uniqueness validation and conflict resolution
-- ✅ Session creation with student generation
+- ✅ Session creation with student generation and management
 - ✅ Admin user management with proper validation
+- ✅ Module system with admin CRUD operations
+- ✅ Full session lifecycle (create, list, detail, archive/unarchive)
+- ✅ Comprehensive test coverage with 100% passing tests
 - ✅ Documentation aligned and updated
-- ✅ Comprehensive test coverage
 
-**Ready for M3 focus areas**:
-- Session page with media display, filters, and pagination
-- Media upload functionality
-- Student PIN login and session access
-- Enhanced session management features
+**Ready for M4 focus areas**:
+- Student list management and individual student operations
+- Student PIN card export (PDF generation)
+- Student deletion with proper ownership checks
+- Enhanced student profile and management features
 
 **Technical debt items** (can be addressed alongside M3):
 - CI/CD pipeline setup
