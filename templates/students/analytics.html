@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Student Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <!-- Page Header -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2>
+            <i class="fas fa-chart-line"></i> Student Analytics
+            <small class="text-muted">Engagement & Performance Overview</small>
+          </h2>
+
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+              <li class="breadcrumb-item"><a href="{{ url_for('students.student_list') }}">Students</a></li>
+              <li class="breadcrumb-item active">Analytics</li>
+            </ol>
+          </nav>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-primary" onclick="refreshAnalytics()">
+            <i class="fas fa-sync-alt"></i> Refresh
+          </button>
+
+          <a href="{{ url_for('students.student_list') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Students
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overview Stats -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="dd-card text-center p-4">
+        <div class="text-primary" style="font-size:2rem; font-weight:700;" id="totalStudentsCount">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <div class="text-muted">Total Students</div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="dd-card text-center p-4">
+        <div class="text-success" style="font-size:2rem; font-weight:700;" id="activeStudentsCount">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <div class="text-muted">Active Students</div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="dd-card text-center p-4">
+        <div class="text-info" style="font-size:2rem; font-weight:700;" id="totalUploadsCount">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <div class="text-muted">Total Uploads</div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="dd-card text-center p-4">
+        <div class="text-warning" style="font-size:2rem; font-weight:700;" id="engagementRatePercent">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <div class="text-muted">Engagement Rate</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Analytics -->
+  <div class="row">
+    <!-- Session Performance -->
+    <div class="col-md-6">
+      <div class="dd-card mb-4">
+        <div class="p-3" style="border-bottom:1px solid var(--color-border);">
+          <h5 class="mb-0">
+            <i class="fas fa-chalkboard-teacher"></i> Session Performance
+          </h5>
+        </div>
+
+        <div class="p-3">
+          <div id="sessionPerformanceContent">
+            <div class="text-center py-4">
+              <i class="fas fa-spinner fa-spin fa-2x text-muted mb-3"></i>
+              <p class="text-muted">Loading session data...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Character Theme Distribution -->
+    <div class="col-md-6">
+      <div class="dd-card mb-4">
+        <div class="p-3" style="border-bottom:1px solid var(--color-border);">
+          <h5 class="mb-0">
+            <i class="fas fa-users"></i> Character Theme Distribution
+          </h5>
+        </div>
+
+        <div class="p-3">
+          <div id="themeDistributionContent">
+            <div class="text-center py-4">
+              <i class="fas fa-spinner fa-spin fa-2x text-muted mb-3"></i>
+              <p class="text-muted">Loading theme data...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Top Performers -->
+    <div class="col-md-6">
+      <div class="dd-card mb-4">
+        <div class="p-3" style="border-bottom:1px solid var(--color-border);">
+          <h5 class="mb-0">
+            <i class="fas fa-trophy"></i> Most Active Students
+          </h5>
+        </div>
+
+        <div class="p-3">
+          <div id="topPerformersContent">
+            <div class="text-center py-4">
+              <i class="fas fa-spinner fa-spin fa-2x text-muted mb-3"></i>
+              <p class="text-muted">Loading performance data...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="col-md-6">
+      <div class="dd-card mb-4">
+        <div class="p-3" style="border-bottom:1px solid var(--color-border);">
+          <h5 class="mb-0">
+            <i class="fas fa-clock"></i> Recent Activity
+          </h5>
+        </div>
+
+        <div class="p-3">
+          <div id="recentActivityContent">
+            <div class="text-center py-4">
+              <i class="fas fa-spinner fa-spin fa-2x text-muted mb-3"></i>
+              <p class="text-muted">Loading activity data...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Engagement Trends (Future Enhancement) -->
+  <div class="row">
+    <div class="col-12">
+      <div class="dd-card">
+        <div class="p-3" style="border-bottom:1px solid var(--color-border);">
+          <h5 class="mb-0">
+            <i class="fas fa-chart-area"></i> Engagement Trends
+            <small class="text-muted">(Coming Soon)</small>
+          </h5>
+        </div>
+
+        <div class="p-3">
+          <div class="text-center py-5">
+            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+            <h6 class="text-muted">Engagement Trends Chart</h6>
+            <p class="text-muted">
+              Visual charts showing student engagement over time will be available in a future update.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadDetailedAnalytics();
+});
+
+function refreshAnalytics() {
+    // Show loading state
+    document.querySelectorAll('#totalStudentsCount, #activeStudentsCount, #totalUploadsCount, #engagementRatePercent').forEach(el => {
+        el.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    });
+
+    loadDetailedAnalytics();
+}
+
+function loadDetailedAnalytics() {
+    // Load basic analytics
+    fetch('/students/analytics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateOverviewStats(data.analytics);
+            }
+        })
+        .catch(error => console.error('Error loading basic analytics:', error));
+
+    // Load detailed analytics
+    fetch('/students/analytics/detailed')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateDetailedAnalytics(data.analytics);
+            } else {
+                showAnalyticsError();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading detailed analytics:', error);
+            showAnalyticsError();
+        });
+}
+
+function updateOverviewStats(analytics) {
+    document.getElementById('totalStudentsCount').textContent = analytics.total_students || 0;
+    document.getElementById('activeStudentsCount').textContent = analytics.active_students;
+    document.getElementById('totalUploadsCount').textContent = analytics.total_uploads;
+    document.getElementById('engagementRatePercent').textContent = analytics.engagement_rate + '%';
+}
+
+function updateDetailedAnalytics(analytics) {
+    // Update session performance
+    updateSessionPerformance(analytics.sessions);
+
+    // Update theme distribution
+    updateThemeDistribution(analytics.themes);
+
+    // Update top performers
+    updateTopPerformers(analytics.top_students);
+
+    // Update recent activity
+    updateRecentActivity(analytics.recent_activity);
+}
+
+function updateSessionPerformance(sessions) {
+    const container = document.getElementById('sessionPerformanceContent');
+
+    if (!sessions || sessions.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-chalkboard-teacher fa-2x text-muted mb-3"></i>
+                <p class="text-muted">No active sessions found.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const html = sessions.map(session => `
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+            <div>
+                <strong>${session.name}</strong><br>
+                <small class="text-muted">Section ${session.section} • ${session.student_count} students</small>
+            </div>
+            <div class="text-end">
+                <span class="badge ${session.is_archived ? 'bg-secondary' : session.is_paused ? 'bg-warning' : 'bg-success'}">
+                    ${session.is_archived ? 'Archived' : session.is_paused ? 'Paused' : 'Active'}
+                </span>
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = html;
+}
+
+function updateThemeDistribution(themes) {
+    const container = document.getElementById('themeDistributionContent');
+
+    if (!themes || Object.keys(themes).length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-users fa-2x text-muted mb-3"></i>
+                <p class="text-muted">No character themes found.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const total = Object.values(themes).reduce((sum, count) => sum + count, 0);
+
+    const html = Object.entries(themes).map(([theme, count]) => {
+        const percentage = Math.round((count / total) * 100);
+        return `
+            <div class="d-flex justify-content-between align-items-center py-2">
+                <div>
+                    <span class="badge bg-primary me-2">${theme}</span>
+                    <span>${count} students</span>
+                </div>
+                <div class="text-end">
+                    <span class="text-muted">${percentage}%</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = html;
+}
+
+function updateTopPerformers(topStudents) {
+    const container = document.getElementById('topPerformersContent');
+
+    if (!topStudents || topStudents.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-trophy fa-2x text-muted mb-3"></i>
+                <p class="text-muted">No student activity data available yet.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const html = topStudents.map((student, index) => `
+        <div class="d-flex justify-content-between align-items-center py-2 ${index < topStudents.length - 1 ? 'border-bottom' : ''}">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    ${index < 3 ? `<i class="fas fa-medal text-${index === 0 ? 'warning' : index === 1 ? 'secondary' : 'dark'}"></i>` : `<span class="text-muted">#${index + 1}</span>`}
+                </div>
+                <div>
+                    <strong>${student.character_name}</strong><br>
+                    <small class="text-muted">${student.uploads} uploads, ${student.reactions} reactions</small>
+                </div>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-success">${student.total_activity}</span>
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = html;
+}
+
+function updateRecentActivity(recentActivity) {
+    const container = document.getElementById('recentActivityContent');
+
+    if (!recentActivity || recentActivity.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-clock fa-2x text-muted mb-3"></i>
+                <p class="text-muted">No recent activity.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const html = recentActivity.map(activity => `
+        <div class="d-flex align-items-center py-2 border-bottom">
+            <div class="me-3">
+                <i class="fas fa-${activity.type === 'upload' ? 'upload' : 'comment'} text-${activity.type === 'upload' ? 'primary' : 'info'}"></i>
+            </div>
+            <div class="flex-grow-1">
+                <div><strong>${activity.student_name}</strong> ${activity.action}</div>
+                <small class="text-muted">${activity.time_ago}</small>
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = html;
+}
+
+function showAnalyticsError() {
+    const containers = ['sessionPerformanceContent', 'themeDistributionContent', 'topPerformersContent', 'recentActivityContent'];
+
+    containers.forEach(containerId => {
+        const container = document.getElementById(containerId);
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-triangle fa-2x text-danger mb-3"></i>
+                <p class="text-muted">Error loading data. Please try refreshing.</p>
+            </div>
+        `;
+    });
+}
+</script>
+{% endblock %}

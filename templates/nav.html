@@ -38,6 +38,12 @@
                   <li><a class="dropdown-item" href="{{ url_for('sessions.start_session') }}">Start New Session</a></li>
                 </ul>
               </li>
+              <!-- Students link for teachers -->
+              <li class="nav-item">
+                <a class="nav-link dd-tab {% if request.endpoint and request.endpoint.startswith('students.') %}active{% endif %}" href="{{ url_for('students.student_list') }}">
+                  Students
+                </a>
+              </li>
             {% elif nav_sessions.type == 'observer' and nav_sessions.data %}
               <!-- Observer: Dropdown with sessions from their district/school -->
               <li class="nav-item dropdown">
@@ -84,10 +90,17 @@
                   {% endfor %}
                 </ul>
               </li>
+              <!-- Students link for admins -->
+              <li class="nav-item">
+                <a class="nav-link dd-tab {% if request.endpoint and request.endpoint.startswith('students.') %}active{% endif %}" href="{{ url_for('students.student_list') }}">
+                  Students
+                </a>
+              </li>
             {% else %}
               <!-- Fallback: Regular Sessions link for admin/staff without specific sessions -->
               {% if current_user.is_teacher() or current_user.is_admin() or current_user.is_staff() %}
               <li class="nav-item"><a class="nav-link dd-tab {% if request.endpoint and request.endpoint.startswith('sessions.') %}active{% endif %}" href="{{ url_for('sessions.list_sessions') }}">Sessions</a></li>
+              <li class="nav-item"><a class="nav-link dd-tab {% if request.endpoint and request.endpoint.startswith('students.') %}active{% endif %}" href="{{ url_for('students.student_list') }}">Students</a></li>
               {% endif %}
             {% endif %}
 

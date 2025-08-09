@@ -6,6 +6,7 @@ from .errors import bp as errors_bp
 from .main import bp as main_bp
 from .profile import bp as profile_bp
 from .sessions import bp as sessions_bp
+from .students import bp as students_bp
 
 
 def init_app(app: Flask):
@@ -15,4 +16,5 @@ def init_app(app: Flask):
     app.register_blueprint(admin_bp)
     app.register_blueprint(profile_bp)
     app.register_blueprint(sessions_bp)
+    app.register_blueprint(students_bp)
     app.register_blueprint(errors_bp)

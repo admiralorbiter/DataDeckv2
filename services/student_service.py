@@ -5,6 +5,9 @@ from typing import Any, Dict, List, Optional
 from werkzeug.security import generate_password_hash
 
 from models import Session, Student, db
+from models.comment import Comment
+from models.media import Media
+from models.student_media_interaction import StudentMediaInteraction
 
 
 class StudentService:
@@ -290,5 +293,101 @@ class StudentService:
                 "character_set": session.character_set,
                 "is_archived": session.is_archived,
                 "is_paused": session.is_paused,
+            },
+        }
+
+    @staticmethod
+    def get_student_portfolio(
+        student_id: int, teacher_id: int
+    ) -> Optional[Dict[str, Any]]:
+        """Get comprehensive portfolio data for a student.
+
+        Args:
+            student_id: ID of the student
+            teacher_id: ID of the teacher (for ownership verification)
+
+        Returns:
+            Dictionary with student portfolio data, None if access denied
+
+        Structure:
+            {
+                'student': Student object,
+                'uploaded_media': List of media uploaded by student,
+                'interactions': List of interactions (likes/reactions),
+                'comments': List of comments made by student,
+                'stats': {
+                    'total_uploads': int,
+                    'total_reactions_given': int,
+                    'total_reactions_received': int,
+                    'total_comments': int,
+                    'recent_activity_count': int
+                }
+            }
+        """
+        # Verify student ownership
+        student = StudentService.get_student_with_ownership_check(
+            student_id, teacher_id
+        )
+
+        if not student:
+            return None
+
+        # Get student's uploaded media
+        uploaded_media = (
+            Media.query.filter(Media.student_id == student_id)
+            .order_by(Media.uploaded_at.desc())
+            .all()
+        )
+
+        # Get student's interactions (reactions they've given)
+        interactions = (
+            StudentMediaInteraction.query.filter(
+                StudentMediaInteraction.student_id == student_id
+            )
+            .join(Media)
+            .order_by(StudentMediaInteraction.updated_at.desc())
+            .all()
+        )
+
+        # Get comments made by student
+        comments = (
+            Comment.query.filter(Comment.student_id == student_id)
+            .join(Media)
+            .order_by(Comment.created_at.desc())
+            .all()
+        )
+
+        # Calculate stats
+        total_reactions_given = sum(
+            [
+                (1 if interaction.liked_graph else 0)
+                + (1 if interaction.liked_eye else 0)
+                + (1 if interaction.liked_read else 0)
+                for interaction in interactions
+            ]
+        )
+
+        # Get reactions received on student's own media
+        reactions_received = 0
+        for media in uploaded_media:
+            reactions_received += media.graph_likes + media.eye_likes + media.read_likes
+
+        return {
+            "student": student,
+            "uploaded_media": uploaded_media,
+            "interactions": interactions,
+            "comments": comments,
+            "stats": {
+                "total_uploads": len(uploaded_media),
+                "total_reactions_given": total_reactions_given,
+                "total_reactions_received": reactions_received,
+                "total_comments": len(comments),
+                "recent_activity_count": len(
+                    [
+                        item
+                        for item in (uploaded_media + comments)
+                        if hasattr(item, "uploaded_at") or hasattr(item, "created_at")
+                    ]
+                ),
             },
         }

@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+{% from "_components/cards.html" import student_card %}
+{% from "_components/tables.html" import student_table %}
+{% from "_components/modals.html" import confirm_modal %}
+
+{% block title %}
+  {% if session %}
+    Students - {{ session.name }}
+  {% else %}
+    My Students
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <!-- Page Header -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2>
+            {% if session %}
+              <i class="fas fa-users"></i> Students in {{ session.name }}
+              <small class="text-muted">Section {{ session.section }}</small>
+            {% else %}
+              <i class="fas fa-users"></i> My Students
+              <small class="text-muted">All Sessions</small>
+            {% endif %}
+          </h2>
+
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+              {% if session %}
+                <li class="breadcrumb-item">
+                  <a href="{{ url_for('sessions.session_detail', session_id=session.id) }}">{{ session.name }}</a>
+                </li>
+                <li class="breadcrumb-item active">Students</li>
+              {% else %}
+                <li class="breadcrumb-item active">My Students</li>
+              {% endif %}
+            </ol>
+          </nav>
+        </div>
+
+        <div class="d-flex gap-2">
+          {% if session %}
+            <a href="{{ url_for('sessions.session_detail', session_id=session.id) }}"
+               class="btn btn-outline-secondary">
+              <i class="fas fa-arrow-left"></i> Back to Session
+            </a>
+
+            <a href="{{ url_for('students.preview_pin_cards', session_id=session.id) }}"
+               class="btn btn-outline-primary">
+              <i class="fas fa-print"></i> PIN Cards
+            </a>
+          {% else %}
+            <a href="{{ url_for('students.analytics_dashboard') }}" class="btn btn-outline-info">
+              <i class="fas fa-chart-line"></i> Analytics
+            </a>
+            <a href="{{ url_for('sessions.list_sessions') }}" class="btn btn-outline-primary">
+              <i class="fas fa-list"></i> View Sessions
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Stats -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="dd-card text-center p-3">
+        <div class="text-primary" style="font-size:1.5rem; font-weight:700;">{{ total_count }}</div>
+        <div class="text-muted">Total Students</div>
+      </div>
+    </div>
+
+    {% if session %}
+      <div class="col-md-3">
+        <div class="dd-card text-center p-3">
+          <div class="text-success" style="font-size:1.5rem; font-weight:700;">
+            {{ session.students.filter_by().count() }}
+          </div>
+          <div class="text-muted">In This Session</div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="dd-card text-center p-3">
+          <div class="text-info" style="font-size:1.5rem; font-weight:700;">
+            {{ session.character_set|title }}
+          </div>
+          <div class="text-muted">Character Theme</div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="dd-card text-center p-3">
+          <div class="{% if session.is_paused %}text-warning{% elif session.is_archived %}text-secondary{% else %}text-success{% endif %}"
+               style="font-size:1.5rem; font-weight:700;">
+            {% if session.is_archived %}
+              Archived
+            {% elif session.is_paused %}
+              Paused
+            {% else %}
+              Active
+            {% endif %}
+          </div>
+          <div class="text-muted">Session Status</div>
+        </div>
+      </div>
+    {% else %}
+      <!-- Show overall analytics when viewing all students -->
+      <div class="col-md-3">
+        <div class="dd-card text-center p-3" id="activeStudentsCard">
+          <div class="text-success" style="font-size:1.5rem; font-weight:700;">
+            <i class="fas fa-spinner fa-spin"></i>
+          </div>
+          <div class="text-muted">Active Students</div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="dd-card text-center p-3" id="totalUploadsCard">
+          <div class="text-info" style="font-size:1.5rem; font-weight:700;">
+            <i class="fas fa-spinner fa-spin"></i>
+          </div>
+          <div class="text-muted">Total Uploads</div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="dd-card text-center p-3" id="engagementCard">
+          <div class="text-warning" style="font-size:1.5rem; font-weight:700;">
+            <i class="fas fa-spinner fa-spin"></i>
+          </div>
+          <div class="text-muted">Engagement Rate</div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Students Table -->
+  <div class="row">
+    <div class="col-12">
+      <div class="dd-card">
+        <div class="p-3" style="border-bottom:1px solid var(--color-border);">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+              <i class="fas fa-table"></i> Student List
+            </h5>
+
+            {% if not session %}
+              <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="viewMode" id="viewAll" autocomplete="off" checked>
+                <label class="btn btn-outline-primary btn-sm" for="viewAll">All Students</label>
+
+                <input type="radio" class="btn-check" name="viewMode" id="viewBySession" autocomplete="off">
+                <label class="btn btn-outline-primary btn-sm" for="viewBySession">By Session</label>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="p-3">
+          {% if students %}
+            {{ student_table(students, show_actions=true) }}
+
+            <!-- Bulk Actions Bar -->
+            <div class="mt-3 p-3 bg-light rounded" id="bulkActionsBar" style="display: none;">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <strong><span id="selectedCountDisplay">0</span> students selected</strong>
+                </div>
+                <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-outline-primary" id="bulkResetPinsBtn">
+                    <i class="fas fa-key"></i> Reset PINs
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" id="bulkDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete Selected
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllBtn">
+                    <i class="fas fa-times"></i> Deselect All
+                  </button>
+                </div>
+              </div>
+            </div>
+          {% else %}
+            <div class="text-center py-5">
+              <i class="fas fa-users fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">No Students Found</h5>
+              <p class="text-muted">
+                {% if session %}
+                  This session doesn't have any students yet.
+                {% else %}
+                  You haven't created any sessions with students yet.
+                {% endif %}
+              </p>
+
+              {% if not session %}
+                <a href="{{ url_for('sessions.start') }}" class="btn btn-primary">
+                  <i class="fas fa-plus"></i> Create Your First Session
+                </a>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<!-- Delete Student Modal -->
+<div class="modal fade" id="deleteStudentModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-exclamation-triangle text-warning"></i>
+          Confirm Delete Student
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong id="deleteStudentName"></strong>?</p>
+        <div class="alert alert-warning">
+          <i class="fas fa-info-circle"></i>
+          This action cannot be undone. The student will lose access to the session and all their work will be removed.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteStudent">
+          <i class="fas fa-trash"></i> Delete Student
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PIN Reset Modal -->
+<div class="modal fade" id="pinResetModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-key text-success"></i>
+          PIN Reset Successful
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <p>New PIN for <strong id="pinResetStudentName"></strong>:</p>
+        <div class="alert alert-success">
+          <h3 class="mb-0 font-monospace" id="newPinDisplay"></h3>
+        </div>
+        <p class="text-muted">
+          <i class="fas fa-info-circle"></i>
+          Please write down this PIN and give it to the student. It will not be shown again.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got It</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/student-management.js') }}"></script>
+
+{% if session %}
+<script>
+// Set session ID for PIN cards generation
+window.currentSessionId = {{ session.id }};
+</script>
+{% else %}
+<script>
+// Load analytics for all students view
+document.addEventListener('DOMContentLoaded', function() {
+    loadStudentAnalytics();
+});
+
+function loadStudentAnalytics() {
+    fetch('/students/analytics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateAnalyticsCards(data.analytics);
+            } else {
+                console.error('Failed to load analytics:', data.message);
+                showAnalyticsError();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading analytics:', error);
+            showAnalyticsError();
+        });
+}
+
+function updateAnalyticsCards(analytics) {
+    // Update active students
+    const activeStudentsCard = document.querySelector('#activeStudentsCard .text-success');
+    if (activeStudentsCard) {
+        activeStudentsCard.innerHTML = analytics.active_students;
+    }
+
+    // Update total uploads
+    const totalUploadsCard = document.querySelector('#totalUploadsCard .text-info');
+    if (totalUploadsCard) {
+        totalUploadsCard.innerHTML = analytics.total_uploads;
+    }
+
+    // Update engagement rate
+    const engagementCard = document.querySelector('#engagementCard .text-warning');
+    if (engagementCard) {
+        engagementCard.innerHTML = analytics.engagement_rate + '%';
+    }
+}
+
+function showAnalyticsError() {
+    // Show error state for analytics cards
+    document.querySelectorAll('#activeStudentsCard .text-success, #totalUploadsCard .text-info, #engagementCard .text-warning').forEach(card => {
+        card.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+    });
+}
+</script>
+{% endif %}
+{% endblock %}

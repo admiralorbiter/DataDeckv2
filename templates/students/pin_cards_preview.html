@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}PIN Cards Preview - {{ session.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <!-- Page Header -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2>
+            <i class="fas fa-print"></i> PIN Cards Preview
+            <small class="text-muted">{{ session.name }}</small>
+          </h2>
+
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+              <li class="breadcrumb-item"><a href="{{ url_for('students.student_list') }}">Students</a></li>
+              <li class="breadcrumb-item"><a href="{{ url_for('students.student_list', session_id=session.id) }}">{{ session.name }}</a></li>
+              <li class="breadcrumb-item active">PIN Cards</li>
+            </ol>
+          </nav>
+        </div>
+
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('students.generate_pin_cards', session_id=session.id) }}"
+             class="btn btn-primary" id="generatePdfBtn">
+            <i class="fas fa-download"></i> Generate PDF
+          </a>
+
+          <a href="{{ url_for('students.student_list', session_id=session.id) }}"
+             class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Students
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Session Info -->
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <div class="dd-card p-4">
+        <h5 class="mb-3"><i class="fas fa-info-circle"></i> Session Information</h5>
+
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Session Name:</strong> {{ session.name }}</p>
+            <p><strong>Section:</strong> {{ session.section }}</p>
+            <p><strong>Character Theme:</strong> {{ session.character_set|title }}</p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Session Code:</strong> <code>{{ session.session_code }}</code></p>
+            <p><strong>Total Students:</strong> {{ total_students }}</p>
+            <p><strong>Cards Per Page:</strong> 10</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="dd-card p-4">
+        <h6 class="mb-3"><i class="fas fa-exclamation-triangle text-warning"></i> Important Notice</h6>
+        <p class="small text-muted">
+          Generating PIN cards will <strong>reset all student PINs</strong> in this session.
+          Make sure to distribute the new cards to students immediately.
+        </p>
+        <p class="small text-muted">
+          Previous PINs will no longer work after generation.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Preview -->
+  <div class="row">
+    <div class="col-12">
+      <div class="dd-card">
+        <div class="p-3" style="border-bottom:1px solid var(--color-border);">
+          <h5 class="mb-0">
+            <i class="fas fa-id-card"></i> Student Cards Preview
+            <small class="text-muted">({{ total_students }} cards)</small>
+          </h5>
+        </div>
+
+        <div class="p-3">
+          {% if students %}
+            <div class="row">
+              {% for student in students %}
+                <div class="col-md-6 col-lg-4 col-xl-3 mb-3">
+                  <div class="card border-2" style="height: 200px;">
+                    <div class="card-body d-flex flex-column">
+                      <div class="text-center mb-2">
+                        <h6 class="card-title mb-1">{{ student.character_name }}</h6>
+                        <small class="text-muted">Character Name</small>
+                      </div>
+
+                      <div class="text-center mb-2 flex-grow-1">
+                        <div class="bg-primary text-white rounded p-2">
+                          <strong style="font-size: 1.2rem;">PIN: ****</strong>
+                        </div>
+                        <small class="text-muted">Login Code</small>
+                      </div>
+
+                      <div class="text-center">
+                        <small class="text-muted d-block">{{ student.username }}</small>
+                        <span class="badge bg-secondary">{{ student.theme }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-5">
+              <i class="fas fa-users fa-3x text-muted mb-3"></i>
+              <h6 class="text-muted">No Students Found</h6>
+              <p class="text-muted">This session doesn't have any students to generate cards for.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instructions -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="dd-card">
+        <div class="p-3" style="border-bottom:1px solid var(--color-border);">
+          <h5 class="mb-0"><i class="fas fa-clipboard-list"></i> Instructions</h5>
+        </div>
+
+        <div class="p-3">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>Before Generating:</h6>
+              <ul class="list-unstyled">
+                <li><i class="fas fa-check text-success me-2"></i>Verify all students are present in the list</li>
+                <li><i class="fas fa-check text-success me-2"></i>Confirm session information is correct</li>
+                <li><i class="fas fa-check text-success me-2"></i>Ensure you have a printer available</li>
+              </ul>
+            </div>
+
+            <div class="col-md-6">
+              <h6>After Generating:</h6>
+              <ul class="list-unstyled">
+                <li><i class="fas fa-print text-info me-2"></i>Print the PDF immediately</li>
+                <li><i class="fas fa-cut text-warning me-2"></i>Cut along the grid lines to separate cards</li>
+                <li><i class="fas fa-share text-primary me-2"></i>Distribute cards to students right away</li>
+                <li><i class="fas fa-info-circle text-muted me-2"></i>Keep backup session code: <code>{{ session.session_code }}</code></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmGenerateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-exclamation-triangle text-warning"></i>
+          Confirm PIN Cards Generation
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>This action will reset PINs for all {{ total_students }} students in this session.</strong></p>
+
+        <div class="alert alert-warning">
+          <i class="fas fa-info-circle"></i>
+          <strong>Important:</strong> After generation, students will need to use their new PINs to log in.
+          Previous PINs will no longer work.
+        </div>
+
+        <p>Are you ready to generate and download the PIN cards PDF?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="{{ url_for('students.generate_pin_cards', session_id=session.id) }}"
+           class="btn btn-primary" id="confirmGenerateBtn">
+          <i class="fas fa-download"></i> Yes, Generate PDF
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const generateBtn = document.getElementById('generatePdfBtn');
+    const modal = new bootstrap.Modal(document.getElementById('confirmGenerateModal'));
+
+    generateBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        modal.show();
+    });
+});
+</script>
+{% endblock %}

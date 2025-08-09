@@ -92,19 +92,27 @@ Acceptance: ✅ **COMPLETE** - All core session management features implemented:
 
 **Deferred to Future**: Sessions list pagination (depends on M3 backend paging implementation).
 
-#### M4 — Students 🚀 **READY TO START**
-- [ ] Student list (per teacher) - **Service layer ready** ✅
-- [ ] Delete with ownership checks - **Service layer ready** ✅
-- [ ] Export printable PIN cards (PDF) - **Data structure ready** ✅
+#### M4 — Students ✅ **COMPLETED**
+- [x] Student list (per teacher) with session filtering ✅
+- [x] Individual student detail/portfolio views ✅
+- [x] Delete with ownership checks ✅
+- [x] Bulk operations (delete, PIN reset) ✅
+- [x] Export printable PIN cards (PDF) ✅
+- [x] Student analytics and engagement reporting ✅
 
-**Foundation Complete:**
-- ✅ `StudentService` class with all business logic methods
-- ✅ UI components (`student_card`, `student_table`, modals)
+**Implementation Complete:**
+- ✅ `StudentService` class with comprehensive business logic
+- ✅ `PinCardsService` for PDF generation with ReportLab
+- ✅ Full CRUD operations with ownership verification
+- ✅ UI components (`student_card`, `student_table`, modals, analytics)
 - ✅ Error handlers for 403/404 ownership violations
-- ✅ JavaScript for interactive features (PIN reset, bulk delete)
-- ✅ Technical debt resolved (model debugging, legacy cleanup)
+- ✅ JavaScript for interactive features (PIN reset, bulk operations)
+- ✅ Student portfolio with media gallery and activity timeline
+- ✅ Analytics dashboard with engagement metrics
+- ✅ Navigation integration and responsive design
+- ✅ Comprehensive test coverage (routes, services, PIN cards)
 
-Acceptance: CRUD works; PDF opens with correct layout.
+**Acceptance: ✅ ACHIEVED** - All CRUD operations work; PDF generation functional; Analytics display engagement data; Bulk operations provide smooth UX; Portfolio shows student work and progress.
 
 #### M5 — Media
 - [ ] Upload image (validate type/size), generate title from tags

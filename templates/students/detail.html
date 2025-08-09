@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+{% from "_components/cards.html" import student_card %}
+
+{% block title %}{{ student.character_name }} - Student Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <!-- Page Header -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2>
+            <i class="fas fa-user"></i> {{ student.character_name }}
+            <small class="text-muted">Student Profile</small>
+          </h2>
+
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+              <li class="breadcrumb-item"><a href="{{ url_for('students.student_list') }}">Students</a></li>
+              <li class="breadcrumb-item active">{{ student.character_name }}</li>
+            </ol>
+          </nav>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-primary"
+                  onclick="resetStudentPin({{ student.id }}, '{{ student.character_name }}')">
+            <i class="fas fa-key"></i> Reset PIN
+          </button>
+
+          <button type="button" class="btn btn-outline-danger"
+                  onclick="confirmDeleteStudent({{ student.id }}, '{{ student.character_name }}')">
+            <i class="fas fa-trash"></i> Delete Student
+          </button>
+
+          <a href="{{ url_for('students.student_list') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Students
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Student Info Card -->
+    <div class="col-md-4">
+      <div class="dd-card p-4 mb-4">
+        <div class="text-center">
+          {% if student.avatar_path %}
+            <img src="{{ student.avatar_path }}" alt="{{ student.character_name }}"
+                 class="rounded-circle mb-3" width="96" height="96">
+          {% else %}
+            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                 style="width: 96px; height: 96px; font-size: 2rem;">
+              <i class="fas fa-user"></i>
+            </div>
+          {% endif %}
+
+          <h4 class="mb-1">{{ student.character_name }}</h4>
+          <p class="text-muted mb-3">{{ student.username }}</p>
+
+          {% if student.character_description %}
+            <p class="text-muted small">{{ student.character_description }}</p>
+          {% endif %}
+        </div>
+
+        <hr>
+
+        <div class="row text-center">
+          <div class="col-6">
+            <div class="text-primary fw-bold">{{ student.id }}</div>
+            <div class="text-muted small">Student ID</div>
+          </div>
+          <div class="col-6">
+            {% set theme = student.character_name.lower() %}
+            {% if 'bear' in theme or 'wolf' in theme or 'eagle' in theme or 'lion' in theme or 'tiger' in theme %}
+              <div class="text-success fw-bold">Animals</div>
+            {% elif 'captain' in theme or 'super' in theme or 'hero' in theme or 'guardian' in theme %}
+              <div class="text-primary fw-bold">Superheroes</div>
+            {% elif 'elf' in theme or 'wizard' in theme or 'knight' in theme or 'mage' in theme %}
+              <div class="text-warning fw-bold">Fantasy</div>
+            {% elif 'star' in theme or 'nova' in theme or 'comet' in theme or 'galaxy' in theme %}
+              <div class="text-info fw-bold">Space</div>
+            {% else %}
+              <div class="text-secondary fw-bold">Other</div>
+            {% endif %}
+            <div class="text-muted small">Theme</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Session Info -->
+      {% if student.section %}
+        <div class="dd-card p-3 mb-4">
+          <h6 class="mb-3"><i class="fas fa-chalkboard-teacher"></i> Current Session</h6>
+
+          <div class="d-flex align-items-center mb-2">
+            <strong>{{ student.section.name }}</strong>
+          </div>
+
+          <div class="small text-muted mb-2">
+            Section {{ student.section.section }} •
+            {% if student.section.is_archived %}
+              <span class="text-secondary">Archived</span>
+            {% elif student.section.is_paused %}
+              <span class="text-warning">Paused</span>
+            {% else %}
+              <span class="text-success">Active</span>
+            {% endif %}
+          </div>
+
+          <div class="small text-muted mb-3">
+            Session Code: <code>{{ student.section.session_code }}</code>
+          </div>
+
+          <a href="{{ url_for('sessions.session_detail', session_id=student.section.id) }}"
+             class="btn btn-sm btn-outline-primary w-100">
+            <i class="fas fa-external-link-alt"></i> View Session
+          </a>
+        </div>
+      {% endif %}
+
+      <!-- Quick Stats -->
+      <div class="dd-card p-3">
+        <h6 class="mb-3"><i class="fas fa-chart-line"></i> Quick Stats</h6>
+
+        <div class="row text-center">
+          <div class="col-6">
+            <div class="text-primary fw-bold">{{ stats.total_uploads }}</div>
+            <div class="text-muted small">Uploads</div>
+          </div>
+          <div class="col-6">
+            <div class="text-success fw-bold">{{ stats.total_reactions_received }}</div>
+            <div class="text-muted small">Reactions Received</div>
+          </div>
+        </div>
+
+        <div class="row text-center mt-2">
+          <div class="col-6">
+            <div class="text-info fw-bold">{{ stats.total_comments }}</div>
+            <div class="text-muted small">Comments</div>
+          </div>
+          <div class="col-6">
+            <div class="text-warning fw-bold">{{ stats.total_reactions_given }}</div>
+            <div class="text-muted small">Reactions Given</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Portfolio -->
+    <div class="col-md-8">
+      <div class="dd-card">
+        <div class="p-3" style="border-bottom:1px solid var(--color-border);">
+          <h5 class="mb-0">
+            <i class="fas fa-folder-open"></i> Student Portfolio
+          </h5>
+        </div>
+
+        <div class="p-3">
+          {% if uploaded_media %}
+            <div class="row">
+              {% for media in uploaded_media %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                  <div class="dd-card">
+                    <div class="card-img-wrapper" style="height: 200px; overflow: hidden;">
+                      {% if media.media_type == 'image' and media.image_file %}
+                        <img src="{{ media.image_file }}" alt="{{ media.title }}"
+                             class="card-img-top" style="width: 100%; height: 100%; object-fit: cover;">
+                      {% elif media.media_type == 'video' and media.video_file %}
+                        <video class="card-img-top" style="width: 100%; height: 100%; object-fit: cover;" controls>
+                          <source src="{{ media.video_file }}" type="video/mp4">
+                          Your browser does not support the video tag.
+                        </video>
+                      {% else %}
+                        <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                          <i class="fas fa-file-alt fa-3x text-muted"></i>
+                        </div>
+                      {% endif %}
+                    </div>
+
+                    <div class="card-body">
+                      <h6 class="card-title">{{ media.title }}</h6>
+                      {% if media.description %}
+                        <p class="card-text small text-muted">{{ media.description[:100] }}{% if media.description|length > 100 %}...{% endif %}</p>
+                      {% endif %}
+
+                      <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">{{ media.uploaded_at.strftime('%m/%d/%Y') }}</small>
+                        <div>
+                          <span class="badge bg-primary me-1">
+                            <i class="fas fa-chart-bar"></i> {{ media.graph_likes }}
+                          </span>
+                          <span class="badge bg-success me-1">
+                            <i class="fas fa-eye"></i> {{ media.eye_likes }}
+                          </span>
+                          <span class="badge bg-info">
+                            <i class="fas fa-book"></i> {{ media.read_likes }}
+                          </span>
+                        </div>
+                      </div>
+
+                      {% if media.graph_tag or media.variable_tag %}
+                        <div class="mt-2">
+                          {% if media.graph_tag %}
+                            <span class="badge bg-secondary me-1">{{ media.graph_tag }}</span>
+                          {% endif %}
+                          {% if media.variable_tag %}
+                            <span class="badge bg-outline-secondary">{{ media.variable_tag }}</span>
+                          {% endif %}
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-5">
+              <i class="fas fa-images fa-3x text-muted mb-3"></i>
+              <h6 class="text-muted">No Work Uploaded Yet</h6>
+              <p class="text-muted">
+                {{ student.character_name }} hasn't uploaded any work to their portfolio yet.
+              </p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="dd-card mt-4">
+        <div class="p-3" style="border-bottom:1px solid var(--color-border);">
+          <h5 class="mb-0">
+            <i class="fas fa-clock"></i> Recent Activity
+          </h5>
+        </div>
+
+        <div class="p-3">
+          {% set recent_items = (uploaded_media[:5] + comments[:5])|sort(attribute='created_at', reverse=True) if comments else uploaded_media[:5] %}
+
+          {% if recent_items %}
+            <div class="timeline">
+              {% for item in recent_items %}
+                <div class="timeline-item mb-3">
+                  <div class="d-flex">
+                    <div class="flex-shrink-0 me-3">
+                      {% if item.__class__.__name__ == 'Media' %}
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                             style="width: 32px; height: 32px;">
+                          <i class="fas fa-upload"></i>
+                        </div>
+                      {% else %}
+                        <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center"
+                             style="width: 32px; height: 32px;">
+                          <i class="fas fa-comment"></i>
+                        </div>
+                      {% endif %}
+                    </div>
+
+                    <div class="flex-grow-1">
+                      {% if item.__class__.__name__ == 'Media' %}
+                        <div class="fw-medium">Uploaded "{{ item.title }}"</div>
+                        <small class="text-muted">
+                          {{ item.uploaded_at.strftime('%m/%d/%Y at %I:%M %p') }}
+                          {% if item.description %}
+                            • {{ item.description[:50] }}{% if item.description|length > 50 %}...{% endif %}
+                          {% endif %}
+                        </small>
+                      {% else %}
+                        <div class="fw-medium">Commented on media</div>
+                        <small class="text-muted">
+                          {{ item.created_at.strftime('%m/%d/%Y at %I:%M %p') }}
+                          • "{{ item.text[:50] }}{% if item.text|length > 50 %}...{% endif %}"
+                        </small>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+
+            {% if (uploaded_media|length + comments|length) > 5 %}
+              <div class="text-center">
+                <small class="text-muted">
+                  Showing 5 most recent activities •
+                  {{ (uploaded_media|length + comments|length) - 5 }} more activities not shown
+                </small>
+              </div>
+            {% endif %}
+          {% else %}
+            <div class="text-center py-4">
+              <i class="fas fa-history fa-2x text-muted mb-3"></i>
+              <p class="text-muted">No recent activity to display.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<!-- Delete Student Modal -->
+<div class="modal fade" id="deleteStudentModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-exclamation-triangle text-warning"></i>
+          Confirm Delete Student
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong id="deleteStudentName"></strong>?</p>
+        <div class="alert alert-warning">
+          <i class="fas fa-info-circle"></i>
+          This action cannot be undone. The student will lose access to the session and all their work will be removed.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteStudent">
+          <i class="fas fa-trash"></i> Delete Student
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PIN Reset Modal -->
+<div class="modal fade" id="pinResetModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-key text-success"></i>
+          PIN Reset Successful
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <p>New PIN for <strong id="pinResetStudentName"></strong>:</p>
+        <div class="alert alert-success">
+          <h3 class="mb-0 font-monospace" id="newPinDisplay"></h3>
+        </div>
+        <p class="text-muted">
+          <i class="fas fa-info-circle"></i>
+          Please write down this PIN and give it to the student. It will not be shown again.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got It</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/student-management.js') }}"></script>
+
+<script>
+// Redirect to student list after successful deletion
+function deleteStudent(studentId) {
+    fetch(`/students/${studentId}/delete`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Student deleted successfully', 'success');
+            // Redirect to student list after short delay
+            setTimeout(() => {
+                window.location.href = "{{ url_for('students.student_list') }}";
+            }, 1000);
+        } else {
+            showToast(data.message || 'Failed to delete student', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting student:', error);
+        showToast('Error deleting student', 'danger');
+    });
+}
+</script>
+{% endblock %}

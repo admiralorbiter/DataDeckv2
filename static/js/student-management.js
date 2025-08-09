@@ -25,10 +25,26 @@ function initializeStudentManagement() {
         checkbox.addEventListener('change', updateSelectedCount);
     });
 
-    // Initialize delete selected button
+    // Initialize delete selected button (legacy)
     const deleteSelectedBtn = document.getElementById('deleteSelectedStudents');
     if (deleteSelectedBtn) {
         deleteSelectedBtn.addEventListener('click', handleDeleteSelected);
+    }
+
+    // Initialize new bulk actions
+    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', handleDeleteSelected);
+    }
+
+    const deselectAllBtn = document.getElementById('deselectAllBtn');
+    if (deselectAllBtn) {
+        deselectAllBtn.addEventListener('click', deselectAll);
+    }
+
+    const bulkResetPinsBtn = document.getElementById('bulkResetPinsBtn');
+    if (bulkResetPinsBtn) {
+        bulkResetPinsBtn.addEventListener('click', handleBulkResetPins);
     }
 
     // Initialize modal event listeners
@@ -51,16 +67,32 @@ function updateSelectedCount() {
     const count = selectedCheckboxes.length;
     const totalCheckboxes = document.querySelectorAll('.student-checkbox');
 
-    // Update count display
+    // Update count displays
     const countElement = document.getElementById('selectedCount');
     if (countElement) {
         countElement.textContent = count;
     }
 
-    // Update delete button state
+    const countDisplayElement = document.getElementById('selectedCountDisplay');
+    if (countDisplayElement) {
+        countDisplayElement.textContent = count;
+    }
+
+    // Update delete button states
     const deleteBtn = document.getElementById('deleteSelectedStudents');
     if (deleteBtn) {
         deleteBtn.disabled = count === 0;
+    }
+
+    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.disabled = count === 0;
+    }
+
+    // Show/hide bulk actions bar
+    const bulkActionsBar = document.getElementById('bulkActionsBar');
+    if (bulkActionsBar) {
+        bulkActionsBar.style.display = count > 0 ? 'block' : 'none';
     }
 
     // Update select all checkbox state
@@ -105,6 +137,39 @@ function handleDeleteSelected() {
     if (confirm(message)) {
         const studentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
         deleteMultipleStudents(studentIds);
+    }
+}
+
+function deselectAll() {
+    const studentCheckboxes = document.querySelectorAll('.student-checkbox');
+    studentCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+
+    const selectAllCheckbox = document.getElementById('selectAllStudents');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    }
+
+    updateSelectedCount();
+}
+
+function handleBulkResetPins() {
+    const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
+    const studentNames = Array.from(selectedCheckboxes).map(cb =>
+        cb.getAttribute('data-student-name')
+    );
+
+    if (studentNames.length === 0) return;
+
+    const message = studentNames.length === 1
+        ? `Reset PIN for ${studentNames[0]}?`
+        : `Reset PINs for ${studentNames.length} students?`;
+
+    if (confirm(message)) {
+        const studentIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+        resetMultipleStudentPins(studentIds);
     }
 }
 
@@ -180,6 +245,14 @@ function deleteStudent(studentId) {
 }
 
 function deleteMultipleStudents(studentIds) {
+    // Show loading state
+    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    const originalText = bulkDeleteBtn ? bulkDeleteBtn.innerHTML : '';
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        bulkDeleteBtn.disabled = true;
+    }
+
     fetch('/students/delete-multiple', {
         method: 'POST',
         headers: {
@@ -191,14 +264,32 @@ function deleteMultipleStudents(studentIds) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Remove student rows from table
+            // Remove student rows from table with animation
             studentIds.forEach(id => {
                 const row = document.querySelector(`input[value="${id}"]`).closest('tr');
-                if (row) row.remove();
+                if (row) {
+                    row.style.transition = 'opacity 0.3s';
+                    row.style.opacity = '0.5';
+                    setTimeout(() => row.remove(), 300);
+                }
             });
 
-            showToast(`${data.deleted_count} students deleted successfully`, 'success');
-            updateSelectedCount();
+            const message = data.deleted_count === 1
+                ? '1 student deleted successfully'
+                : `${data.deleted_count} students deleted successfully`;
+
+            showToast(message, 'success');
+
+            // Update counts after animation
+            setTimeout(() => {
+                updateSelectedCount();
+
+                // Check if no students left and show empty state
+                const remainingStudents = document.querySelectorAll('.student-checkbox').length;
+                if (remainingStudents === 0) {
+                    location.reload(); // Reload to show empty state
+                }
+            }, 400);
         } else {
             showToast(data.message || 'Failed to delete students', 'danger');
         }
@@ -206,6 +297,140 @@ function deleteMultipleStudents(studentIds) {
     .catch(error => {
         console.error('Error deleting students:', error);
         showToast('Error deleting students', 'danger');
+    })
+    .finally(() => {
+        // Restore button state
+        if (bulkDeleteBtn) {
+            bulkDeleteBtn.innerHTML = originalText;
+            bulkDeleteBtn.disabled = false;
+        }
+    });
+}
+
+function resetMultipleStudentPins(studentIds) {
+    // Show loading state
+    const bulkResetBtn = document.getElementById('bulkResetPinsBtn');
+    const originalText = bulkResetBtn ? bulkResetBtn.innerHTML : '';
+    if (bulkResetBtn) {
+        bulkResetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+        bulkResetBtn.disabled = true;
+    }
+
+    // Reset PINs sequentially to avoid overwhelming the server
+    let completed = 0;
+    let newPins = [];
+
+    const resetNext = (index) => {
+        if (index >= studentIds.length) {
+            // All done - show results
+            if (bulkResetBtn) {
+                bulkResetBtn.innerHTML = originalText;
+                bulkResetBtn.disabled = false;
+            }
+
+            if (newPins.length > 0) {
+                showBulkPinResetResults(newPins);
+                showToast(`${newPins.length} PINs reset successfully`, 'success');
+            }
+            return;
+        }
+
+        const studentId = studentIds[index];
+        const studentCheckbox = document.querySelector(`input[value="${studentId}"]`);
+        const studentName = studentCheckbox ? studentCheckbox.getAttribute('data-student-name') : 'Unknown';
+
+        fetch(`/students/${studentId}/reset-pin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                newPins.push({
+                    studentId: studentId,
+                    studentName: studentName,
+                    newPin: data.new_pin
+                });
+            }
+            completed++;
+            resetNext(index + 1);
+        })
+        .catch(error => {
+            console.error(`Error resetting PIN for student ${studentId}:`, error);
+            completed++;
+            resetNext(index + 1);
+        });
+    };
+
+    resetNext(0);
+}
+
+function showBulkPinResetResults(results) {
+    // Create a modal to display all the new PINs
+    const modalHtml = `
+        <div class="modal fade" id="bulkPinResetModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-key text-success"></i>
+                            Bulk PIN Reset Results
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-success">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>${results.length} PINs have been reset successfully.</strong>
+                            Please write down these PINs and distribute them to students.
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>New PIN</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${results.map(result => `
+                                        <tr>
+                                            <td><strong>${result.studentName}</strong></td>
+                                            <td><code class="fs-5">${result.newPin}</code></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got It</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if present
+    const existingModal = document.getElementById('bulkPinResetModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Add modal to DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('bulkPinResetModal'));
+    modal.show();
+
+    // Clean up modal after hiding
+    document.getElementById('bulkPinResetModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
     });
 }
 
@@ -216,8 +441,8 @@ function generatePinCards() {
         return;
     }
 
-    // Open PIN cards in new window
-    window.open(`/students/pin-cards/${sessionId}`, '_blank');
+    // Navigate to PIN cards preview page
+    window.location.href = `/students/pin-cards/${sessionId}/preview`;
 }
 
 function initializeModals() {
