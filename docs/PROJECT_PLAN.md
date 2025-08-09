@@ -19,11 +19,11 @@ This is the actionable, task-oriented plan to deliver the Flask rewrite. It tran
 Acceptance: `flask run` boots; `pytest` green on a clean DB; pre-commit enforced locally and in CI.
 
 #### M1 — Data Model & Seed
-- [ ] Implement models (SQLAlchemy): `User`, `Observer`, `District`, `School`, `Session`, `Student`, `Media`, `Comment`, `StudentMediaInteraction`
-- [ ] Add indexes/constraints per `docs/FLASK_REWRITE_PLAN.md`
-- [ ] Schema creation via app startup (`db.create_all()`)
-- [ ] Dev seed script (teachers, session, students)
-- [ ] Pytest factories for core entities
+- [x] Implement models (SQLAlchemy): `User`, `Observer`, `District`, `School`, `Session`, `Student`, `Media`, `Comment`, `StudentMediaInteraction`
+- [x] Add indexes/constraints per `docs/FLASK_REWRITE_PLAN.md`
+- [x] Schema creation via app startup (`db.create_all()`)
+- [x] Dev seed script (teachers, session, students)
+- [x] Pytest factories for core entities
 
 Acceptance: Schema creates successfully via `db.create_all()`; seed creates demo teacher+session+students; factories generate valid objects.
 
@@ -128,7 +128,7 @@ M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9 → M10 → M1
 - [ ] Add observer auth blueprint stub with routes and templates
 - [ ] Implement `Session` model + uniqueness logic (service + form validation)
 - [ ] Implement `Student` generation service (name, PIN hash, avatar path)
-- [ ] Seed CLI to create demo teacher + session + 20 students
+- [x] Seed CLI to create demo teacher + session + 20 students
 - [ ] Session page scaffold with pagination and filters (no-op handlers)
 - [x] Set up pre-commit (black, isort, flake8); wire basic GitHub Actions
   - How-to: `pip install pre-commit && pre-commit install && pre-commit run --all-files`

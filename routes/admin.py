@@ -62,6 +62,25 @@ def create_user():
             last_name=request.form["last_name"],
             role=User.Role(request.form["role"]),
         )
+        # Optional school/district info (either names or IDs) to satisfy validation
+        school_name = request.form.get("school")
+        district_name = request.form.get("district")
+        if school_name:
+            new_user.school = school_name
+        if district_name:
+            new_user.district = district_name
+        school_id = request.form.get("school_id")
+        district_id = request.form.get("district_id")
+        if school_id:
+            try:
+                new_user.school_id = int(school_id)
+            except ValueError:
+                pass
+        if district_id:
+            try:
+                new_user.district_id = int(district_id)
+            except ValueError:
+                pass
         new_user.validate()
         db.session.add(new_user)
         db.session.commit()
@@ -99,9 +118,8 @@ def edit_user(user_id):
                 user.school_id = request.form.get("school_id")
                 user.district_id = request.form.get("district_id")
 
-            valid, message = user.validate()
-            if not valid:
-                return jsonify({"success": False, "message": message}), 400
+            # Validate will raise ValueError on failure
+            user.validate()
 
             db.session.commit()
             return jsonify({"success": True, "message": "User updated successfully!"})

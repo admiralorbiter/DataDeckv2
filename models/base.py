@@ -18,3 +18,6 @@ class BaseModel(db.Model):
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+
+    # Common useful indexes hooks (children can extend __table_args__)
+    __table_args__ = {"sqlite_autoincrement": True}

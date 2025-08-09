@@ -10,6 +10,9 @@ class Student(User):
     character_description = db.Column(db.Text)
     avatar_path = db.Column(db.String(256))
     teacher_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    section_id = db.Column(db.Integer, db.ForeignKey("sessions.id"))
+    device_id = db.Column(db.String(128))
+    pin_hash = db.Column(db.String(128))
 
     # Use polymorphic identity to distinguish Student from User
     __mapper_args__ = {
@@ -22,6 +25,13 @@ class Student(User):
     teacher = db.relationship(
         "User",
         foreign_keys=[teacher_id],
+        backref=db.backref("students", lazy="dynamic"),
+    )
+
+    # Relationship to session/section
+    section = db.relationship(
+        "Session",
+        foreign_keys=[section_id],
         backref=db.backref("students", lazy="dynamic"),
     )
 
