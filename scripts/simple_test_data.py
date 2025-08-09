@@ -13,7 +13,18 @@ from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash
 
 from app import create_app
-from models import District, Media, Module, School, Session, Student, User, db
+from models import (
+    Comment,
+    District,
+    Media,
+    Module,
+    School,
+    Session,
+    Student,
+    StudentMediaInteraction,
+    User,
+    db,
+)
 from models.media import MediaType
 
 # Add project root to path
@@ -272,6 +283,16 @@ def create_simple_test_data():
         media_items = create_test_media(students, sessions)
         print(f"   ✅ Created {len(media_items)} media items")
 
+        # Step 11: Create comments and interactions for M6 testing
+        print("💬 Creating test comments and interactions for M6...")
+        comments, interactions = create_test_comments_and_interactions(
+            students, media_items, teachers
+        )
+        print(
+            f"   ✅ Created {len(comments)} comments and "
+            f"{len(interactions)} interactions"
+        )
+
         # Commit everything
         print("💾 Committing to database...")
         db.session.commit()
@@ -296,6 +317,14 @@ def create_simple_test_data():
         print(f"   • Modules: {len(modules)}")
         print(f"   • Students: {len(students)} (across first 8 active sessions)")
         print(f"   • Media Items: {len(media_items)} (individual uploads + Data Decks)")
+        print(
+            f"   • Comments: {len(comments)} "
+            f"(student + teacher comments with replies)"
+        )
+        print(
+            f"   • Student Interactions: {len(interactions)} "
+            f"(reactions + comment counts)"
+        )
 
         # Show session breakdown
         active_count = sum(1 for s in sessions if not s.is_archived and not s.is_paused)
@@ -340,6 +369,17 @@ def create_simple_test_data():
         print("   • Random reaction counts for testing badge display")
         print("   • Sample student PINs available in student list view")
 
+        print("\n💬 M6 Comments Testing:")
+        print("   • ~70% of media items have 1-4 comments each")
+        print("   • Mix of student and teacher comments with realistic content")
+        print("   • ~30% of comment threads include replies (nested comments)")
+        print("   • StudentMediaInteraction records track comment counts")
+        print("   • Comments have realistic timestamps (1 hour to 1 week old)")
+        print(
+            "   • Student reactions (Graph Guru, Expert Engager, "
+            "Supreme Storyteller) included"
+        )
+
         print("\n🎯 To Test M5 Media Features:")
         print("   1. Login as teacher (alice.smith / teacher123)")
         print("   2. Go to Students → View any session")
@@ -347,6 +387,17 @@ def create_simple_test_data():
         print("   4. Login as student using district/school/PIN")
         print("   5. Test upload features and view existing media")
         print("   6. Navigate between images in Data Decks")
+
+        print("\n🎯 To Test M6 Posts & Comments Features:")
+        print("   1. Login as teacher (alice.smith / teacher123)")
+        print("   2. Go to Sessions → View any active session")
+        print("   3. Click the 'comments' icon on media cards to view posts")
+        print("   4. See existing comments from students and teachers")
+        print("   5. Add new comments as a teacher")
+        print("   6. Click 'Reply' to test nested comment functionality")
+        print("   7. Login as student and add comments/replies")
+        print("   8. Check comment counts update in session view")
+        print("   9. Test 'View as Post & Comments' button in media detail")
 
     except Exception as e:
         print(f"❌ Error creating test data: {e}")
@@ -676,6 +727,247 @@ def create_test_media(students, sessions):
 
     db.session.flush()
     return media_items
+
+
+def create_test_comments_and_interactions(students, media_items, teachers):
+    """Create test comments and student media interactions for M6 testing."""
+    comments = []
+    interactions = []
+
+    # Sample comment texts for different types
+    student_comments = [
+        "This is a really cool graph! I like how you showed the data.",
+        "Nice work! The colors make it easy to understand.",
+        "I see a clear trend in your visualization. Great job!",
+        "This reminds me of our class discussion about data patterns.",
+        "Cool! I want to try making a graph like this.",
+        "The title explains exactly what the data shows.",
+        "I notice the highest point is in the middle. Interesting!",
+        "This would be perfect for our presentation.",
+        "Great use of labels on your chart.",
+        "I learned something new from looking at this!",
+        "The data story is very clear here.",
+        "Nice choice of graph type for this data.",
+    ]
+
+    teacher_comments = [
+        "Excellent work! Your analysis clearly shows understanding of "
+        "the data patterns.",
+        "Great job on the visualization. Consider adding a trend line next time.",
+        "I love how you explained your findings in the description.",
+        "This demonstrates strong data literacy skills. Well done!",
+        "Your graph clearly communicates the story in the data.",
+        "Nice work! What other patterns do you notice?",
+        "This is a perfect example of effective data visualization.",
+        "Great attention to detail in your labeling and formatting.",
+        "I can see you put thought into choosing the right graph type.",
+        "Excellent interpretation of the data. Keep up the great work!",
+        "Your analysis goes beyond just showing data - you're telling a story.",
+        "This visualization would be great to share with the class.",
+    ]
+
+    reply_comments = [
+        "Thank you! I worked really hard on it.",
+        "Thanks for the feedback!",
+        "I'm glad you liked it!",
+        "Good idea! I'll try that next time.",
+        "Thank you for the suggestion!",
+        "I'm happy you found it interesting!",
+        "Thanks! I learned a lot making this.",
+        "I appreciate the encouragement!",
+    ]
+
+    # Create comments for about 70% of media items
+    media_with_comments = random.sample(media_items, int(len(media_items) * 0.7))
+
+    for media in media_with_comments:
+        # Get the session and related students/teacher for this media
+        session = Session.query.get(media.session_id)
+        if not session:
+            continue
+
+        session_students = [s for s in students if s.section_id == session.id]
+        teacher = User.query.get(session.created_by_id)
+
+        # Create 1-4 comments per media item
+        num_comments = random.randint(1, 4)
+        media_comments = []
+
+        for i in range(num_comments):
+            # 60% chance of student comment, 40% chance of teacher comment
+            if random.random() < 0.6 and session_students:
+                # Student comment
+                commenter = random.choice(session_students)
+                comment_text = random.choice(student_comments)
+
+                comment = Comment(
+                    media_id=media.id,
+                    text=comment_text,
+                    name=commenter.character_name,
+                    is_admin=False,
+                    student_id=commenter.id,
+                    created_at=datetime.utcnow()
+                    - timedelta(hours=random.randint(1, 168)),  # 1 hour to 1 week ago
+                )
+
+                # Update or create StudentMediaInteraction for commenting student
+                interaction = StudentMediaInteraction.query.filter_by(
+                    student_id=commenter.id, media_id=media.id
+                ).first()
+
+                if interaction:
+                    interaction.comment_count += 1
+                else:
+                    interaction = StudentMediaInteraction(
+                        student_id=commenter.id,
+                        media_id=media.id,
+                        comment_count=1,
+                        liked_graph=random.choice([True, False]),
+                        liked_eye=random.choice([True, False]),
+                        liked_read=random.choice([True, False]),
+                    )
+                    db.session.add(interaction)
+                    interactions.append(interaction)
+
+            else:
+                # Teacher comment
+                comment_text = random.choice(teacher_comments)
+
+                comment = Comment(
+                    media_id=media.id,
+                    text=comment_text,
+                    name=f"{teacher.first_name} {teacher.last_name}",
+                    is_admin=True,
+                    created_at=datetime.utcnow()
+                    - timedelta(hours=random.randint(1, 168)),  # 1 hour to 1 week ago
+                )
+
+            db.session.add(comment)
+            comments.append(comment)
+            media_comments.append(comment)
+
+        # Add replies to create realistic comment threads (80% chance for media
+        # with 1+ comments)
+        if len(media_comments) >= 1 and random.random() < 0.8:
+            # Choose 1-2 comments to get replies
+            num_threads = min(random.randint(1, 2), len(media_comments))
+            parent_comments = random.sample(media_comments, num_threads)
+
+            for parent_comment in parent_comments:
+                # Each thread gets 1-3 replies
+                num_replies = random.randint(1, 3)
+
+                for reply_num in range(num_replies):
+                    # Reply could be from student (if parent was teacher) or
+                    # teacher (if parent was student)
+                    if parent_comment.is_admin and session_students:
+                        # Student reply to teacher comment
+                        replier = random.choice(session_students)
+
+                        if reply_num == 0:
+                            reply_text = random.choice(reply_comments)
+                        else:
+                            # Follow-up student comments
+                            followup_comments = [
+                                "I have another question about this.",
+                                "That makes sense now, thank you!",
+                                "Can you show us more examples like this?",
+                                "I want to try this approach too.",
+                                "This is really helpful!",
+                                "I see the pattern now.",
+                            ]
+                            reply_text = random.choice(followup_comments)
+
+                        reply = Comment(
+                            media_id=media.id,
+                            parent_id=parent_comment.id,
+                            text=reply_text,
+                            name=replier.character_name,
+                            is_admin=False,
+                            student_id=replier.id,
+                            created_at=parent_comment.created_at
+                            + timedelta(
+                                hours=random.randint(
+                                    1 + reply_num * 12, 24 + reply_num * 12
+                                )
+                            ),
+                        )
+                    else:
+                        # Teacher reply to student comment
+                        if reply_num == 0:
+                            teacher_replies = [
+                                "Great observation! You're really thinking like a "
+                                "data scientist.",
+                                "Excellent question! Let me explain that further.",
+                                "I love your curiosity! Here's what I think "
+                                "about that...",
+                                "That's exactly the kind of critical thinking "
+                                "we need.",
+                                "Good point!considered looking at it this way?",
+                                "You're on the right track! Keep exploring that idea.",
+                            ]
+                            reply_text = random.choice(teacher_replies)
+                        else:
+                            # Follow-up teacher comments
+                            followup_teacher = [
+                                "Does that help clarify things?",
+                                "What other patterns do you notice?",
+                                "Try applying this to your own data next time.",
+                                "This is a great example for the whole class.",
+                                "Keep up the excellent work!",
+                                "I'm impressed by your analysis skills.",
+                            ]
+                            reply_text = random.choice(followup_teacher)
+
+                        reply = Comment(
+                            media_id=media.id,
+                            parent_id=parent_comment.id,
+                            text=reply_text,
+                            name=f"{teacher.first_name} {teacher.last_name}",
+                            is_admin=True,
+                            created_at=parent_comment.created_at
+                            + timedelta(
+                                hours=random.randint(
+                                    2 + reply_num * 8, 36 + reply_num * 8
+                                )
+                            ),
+                        )
+
+                    db.session.add(reply)
+                    comments.append(reply)
+
+    # Create additional interactions for students who haven't interacted yet
+    for student in students:
+        # Each student interacts with 2-5 random media items from their session
+        student_session_media = [
+            m for m in media_items if m.session_id == student.section_id
+        ]
+        if not student_session_media:
+            continue
+
+        num_interactions = min(random.randint(2, 5), len(student_session_media))
+        interaction_media = random.sample(student_session_media, num_interactions)
+
+        for media in interaction_media:
+            # Skip if interaction already exists
+            existing = StudentMediaInteraction.query.filter_by(
+                student_id=student.id, media_id=media.id
+            ).first()
+
+            if not existing:
+                interaction = StudentMediaInteraction(
+                    student_id=student.id,
+                    media_id=media.id,
+                    comment_count=0,  # No additional comments, just reactions
+                    liked_graph=random.choice([True, False]),
+                    liked_eye=random.choice([True, False]),
+                    liked_read=random.choice([True, False]),
+                )
+                db.session.add(interaction)
+                interactions.append(interaction)
+
+    db.session.flush()
+    return comments, interactions
 
 
 def main():

@@ -137,12 +137,22 @@ Acceptance: ✅ **COMPLETE** - All core session management features implemented:
 
 **Acceptance: ✅ ACHIEVED** - Upload persists with validation; edit updates title and tags; delete removes with permissions; gallery renders with navigation; Data Deck projects support 1-10 images; student-friendly interfaces integrated.
 
-#### M6 — Posts & Comments
-- [ ] Post detail shows media, poster, counts
-- [ ] Nested comments (replies), attribution (admin/student)
-- [ ] Increment `StudentMediaInteraction.comment_count` on student comment
+#### M6 — Posts & Comments ✅ **COMPLETED**
+- [x] Post detail shows media, poster, counts ✅
+- [x] Nested comments (replies), attribution (admin/student) ✅
+- [x] Increment `StudentMediaInteraction.comment_count` on student comment ✅
 
-Acceptance: Replies render nested; counts are accurate after actions.
+**Implementation Complete:**
+- ✅ `PostsBlueprint` with routes for post detail and comment functionality
+- ✅ `CommentForm` for adding comments and replies with validation
+- ✅ Comprehensive post detail template with media display, poster info, and stats
+- ✅ Nested comment system with admin/student attribution and reply threading
+- ✅ Comment count increment logic in `StudentMediaInteraction` model
+- ✅ Navigation links from media detail and session views to post views
+- ✅ Template filters and UI components for rich comment display
+- ✅ Proper permission checking for both authenticated and student users
+
+**Acceptance: ✅ ACHIEVED** - Replies render nested with proper attribution; comment counts update accurately; post views integrate seamlessly with existing media workflow.
 
 #### M7 — Reactions/Badges
 - [ ] Decide reaction semantics (toggle vs single-select) and implement consistently

@@ -456,3 +456,20 @@ class MediaEditForm(FlaskForm):
     )
 
     submit = SubmitField("Update Media")
+
+
+class CommentForm(FlaskForm):
+    text = TextAreaField(
+        "Comment",
+        validators=[DataRequired(), Length(max=1000)],
+        render_kw={
+            "placeholder": "Add a comment...",
+            "rows": 3,
+        },
+    )
+    parent_id = IntegerField(
+        "Reply To",
+        validators=[Optional()],
+        render_kw={"type": "hidden"},
+    )
+    submit = SubmitField("Post Comment")

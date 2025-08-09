@@ -47,6 +47,14 @@ def create_app(config_name: str | None = None) -> Flask:
     # Register blueprints/routes
     init_routes(app)
 
+    # Custom Jinja filters
+    @app.template_filter("nl2br")
+    def nl2br_filter(text):
+        """Convert newlines to HTML line breaks."""
+        if not text:
+            return text
+        return text.replace("\n", "<br>\n")
+
     # Template context processors
     @app.context_processor
     def inject_nav_sessions():
