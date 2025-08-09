@@ -79,6 +79,32 @@ python create_admin.py
 pytest -q
 ```
 
+## Development Tools
+
+### Test Data
+Create sample data for testing:
+```bash
+make test-data
+# Creates admin (jonlane/nihilism), teachers, observers, and sessions
+```
+
+### Accessibility Audit
+Run WCAG AA compliance check:
+```bash
+make a11y-audit
+# Checks forms, color contrast, semantic HTML, and ARIA attributes
+```
+
+### Available Make Commands
+```bash
+make run          # Start Flask server
+make test         # Run pytest
+make test-data    # Create test database
+make a11y-audit   # Accessibility audit
+make lint         # Run pre-commit on all files
+make format       # Format code (black + isort)
+```
+
 ## Pre-commit hooks
 Install and enable pre-commit to auto-format and lint on commit.
 

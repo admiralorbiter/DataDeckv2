@@ -1,11 +1,11 @@
 {% macro field(field, label=None, type='text', placeholder='', classes='') -%}
   <div class="mb-3">
     {% if label %}
-      <label class="form-label dd-form-label">{{ label }}</label>
+      <label for="{{ field.id }}" class="form-label dd-form-label">{{ label }}</label>
     {% endif %}
-    {{ field(class_='form-control dd-input ' + classes, placeholder=placeholder) }}
+    {{ field(class_='form-control dd-input ' + classes, placeholder=placeholder, id=field.id) }}
     {% if field.errors %}
-      <div class="dd-error">{{ field.errors[0] }}</div>
+      <div class="dd-error" role="alert">{{ field.errors[0] }}</div>
     {% endif %}
   </div>
 {%- endmacro %}

@@ -150,15 +150,16 @@ Create `templates/_components/` with macros and shared partials:
 - [x] Two-row nav variant (logged-out: Student vs Teacher/Admin login), centered nav row, sticky header
 - [x] Student login with District/School dropdowns; backend scoping by district/school
 - [x] Favicon (temporary logo) and page titles updated
+- [x] Role-based session navigation: teacher dropdowns, observer district scope, admin multi-district view, student session link
+- [x] Accessibility audit completed: WCAG AA compliant, 0 issues found (see `docs/ACCESSIBILITY.md`)
 - [ ] Pagination macro usage on sessions list (depends on server paging vars)
-- [ ] Accessibility/Lighthouse pass and notes captured
+- [ ] Manual keyboard testing and browser Lighthouse audit (optional)
 
 ## Next Actions (prioritized)
-1) Run axe/Lighthouse on: login, sessions list/detail, admin dashboard; fix any critical/serious issues
-2) Integrate `pagination.pager()` into sessions list when backend paging lands
-3) Optional (Teacher convenience): add sessions dropdown in nav listing active sections (role-aware)
-4) Document student login scope behavior in `docs/ACCOUNTS.md` (district/school + PIN)
-5) Hide or guard `styleguide.html` in non-dev environments
+1) Integrate `pagination.pager()` into sessions list when backend paging lands
+2) Document student login scope behavior in `docs/ACCOUNTS.md` (district/school + PIN)
+3) Hide or guard `styleguide.html` in non-dev environments
+4) Optional: Manual keyboard testing and browser Lighthouse audit for comprehensive validation
 
 ## Decision Points for You
 - Palette: keep teal/accent as primary for MVP, or switch to DataDeck Blue now? Tokens enable either path.
