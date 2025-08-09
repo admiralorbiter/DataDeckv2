@@ -98,6 +98,17 @@ class StartSessionForm(FlaskForm):
         ],
         default="animals",
     )
+    student_count = IntegerField(
+        "Number of Students",
+        validators=[
+            DataRequired(),
+            NumberRange(
+                min=5, max=50, message="Student count must be between 5 and 50"
+            ),
+        ],
+        default=20,
+        render_kw={"placeholder": "e.g., 25"},
+    )
     submit = SubmitField("Start Session")
     archive_and_create = SubmitField("Archive Existing & Start New")
 

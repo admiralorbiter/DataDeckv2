@@ -52,6 +52,15 @@
               </div>
             </div>
 
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                {{ form.student_count.label(class="form-label dd-form-label") }}
+                {{ form.student_count(class="form-control dd-input" + (" is-invalid" if form.student_count.errors else "")) }}
+                {% for error in form.student_count.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                <div class="form-text">How many students will join this session? (5-50)</div>
+              </div>
+            </div>
+
             <div class="d-grid gap-2 mt-4">
               {% if existing_session %}
                 <div class="btn-group" role="group">
@@ -68,7 +77,7 @@
       </div>
 
       <div class="mt-3">
-        <small class="text-muted"><i class="fas fa-info-circle"></i> Creating a session will generate 20 students with unique PINs. You can view and print PIN cards after creation.</small>
+        <small class="text-muted"><i class="fas fa-info-circle"></i> Creating a session will generate students with unique PINs and character names. You can view and print PIN cards after creation.</small>
       </div>
     </div>
   </div>

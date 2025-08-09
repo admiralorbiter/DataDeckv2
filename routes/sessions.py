@@ -45,7 +45,7 @@ def start_session():
 
             # Generate students for the session
             students = SessionService.generate_students_for_session(
-                new_session, count=20
+                new_session, count=form.student_count.data
             )
 
             # Commit everything
