@@ -2,9 +2,10 @@ from datetime import datetime
 
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
+from sqlalchemy import func, or_
 
 from forms import MediaFilterForm, SessionFilterForm, StartSessionForm
-from models import Media, Session, db
+from models import Comment, Media, Session, Student, StudentMediaInteraction, db
 from services.session_service import SessionConflictError, SessionService
 
 from .base import create_blueprint, teacher_or_student_required
@@ -178,16 +179,157 @@ def session_detail(session_id):
     viewing_student = None
     student_id = session.get("student_id")
     if student_id:
-        from models import Student, StudentMediaInteraction
-
         viewing_student = Student.query.get(student_id)
-
         # Add student interaction data to each media item
         for item in media:
             interaction = StudentMediaInteraction.query.filter_by(
                 student_id=student_id, media_id=item.id
             ).first()
             item.student_interactions = interaction
+
+    # --- Session Analytics (teacher view primarily) ---
+    # Aggregate reaction totals across all media in this session
+    graph_total = (
+        db.session.query(func.sum(Media.graph_likes))
+        .filter(Media.session_id == session_id)
+        .scalar()
+        or 0
+    )
+    eye_total = (
+        db.session.query(func.sum(Media.eye_likes))
+        .filter(Media.session_id == session_id)
+        .scalar()
+        or 0
+    )
+    read_total = (
+        db.session.query(func.sum(Media.read_likes))
+        .filter(Media.session_id == session_id)
+        .scalar()
+        or 0
+    )
+
+    # Distinct students who reacted (any badge)
+    reacted_students = (
+        db.session.query(func.count(func.distinct(StudentMediaInteraction.student_id)))
+        .join(Media, StudentMediaInteraction.media_id == Media.id)
+        .filter(Media.session_id == session_id)
+        .filter(
+            or_(
+                StudentMediaInteraction.liked_graph.is_(True),
+                StudentMediaInteraction.liked_eye.is_(True),
+                StudentMediaInteraction.liked_read.is_(True),
+            )
+        )
+        .scalar()
+        or 0
+    )
+
+    # Distinct students who commented; total comments
+    student_commenters = (
+        db.session.query(func.count(func.distinct(Comment.student_id)))
+        .join(Media, Comment.media_id == Media.id)
+        .filter(Media.session_id == session_id)
+        .filter(Comment.is_admin.is_(False), Comment.student_id.isnot(None))
+        .scalar()
+        or 0
+    )
+    total_comments = (
+        db.session.query(func.count(Comment.id))
+        .join(Media, Comment.media_id == Media.id)
+        .filter(Media.session_id == session_id)
+        .scalar()
+        or 0
+    )
+
+    # Top media by total reactions (top 3)
+    score_expr = Media.graph_likes + Media.eye_likes + Media.read_likes
+    top_media_q = (
+        Media.query.filter(Media.session_id == session_id)
+        .order_by(score_expr.desc(), Media.uploaded_at.desc())
+        .limit(3)
+        .all()
+    )
+    top_media = [
+        {
+            "id": m.id,
+            "title": m.title,
+            "score": (m.graph_likes + m.eye_likes + m.read_likes),
+            "graph": m.graph_likes,
+            "eye": m.eye_likes,
+            "read": m.read_likes,
+        }
+        for m in top_media_q
+    ]
+
+    # Per-student participation table data
+    student_participation = []
+    for s in students:
+        # Uploads by this student in this session
+        uploads_count = (
+            db.session.query(func.count(Media.id))
+            .filter(Media.session_id == session_id, Media.student_id == s.id)
+            .scalar()
+            or 0
+        )
+
+        # Did the student react to any media in this session?
+        reacted_any = (
+            db.session.query(StudentMediaInteraction.id)
+            .join(Media, StudentMediaInteraction.media_id == Media.id)
+            .filter(
+                Media.session_id == session_id,
+                StudentMediaInteraction.student_id == s.id,
+            )
+            .filter(
+                or_(
+                    StudentMediaInteraction.liked_graph.is_(True),
+                    StudentMediaInteraction.liked_eye.is_(True),
+                    StudentMediaInteraction.liked_read.is_(True),
+                )
+            )
+            .first()
+            is not None
+        )
+
+        # Comment count by student in this session
+        comments_count = (
+            db.session.query(func.count(Comment.id))
+            .join(Media, Comment.media_id == Media.id)
+            .filter(
+                Media.session_id == session_id,
+                Comment.student_id == s.id,
+                Comment.is_admin.is_(False),
+            )
+            .scalar()
+            or 0
+        )
+
+        student_participation.append(
+            {
+                "id": s.id,
+                "name": s.character_name,
+                "uploads": uploads_count,
+                "reacted": reacted_any,
+                "comments": comments_count,
+            }
+        )
+
+    analytics = {
+        "reaction_totals": {
+            "graph": graph_total,
+            "eye": eye_total,
+            "read": read_total,
+            "total": graph_total + eye_total + read_total,
+        },
+        "participation": {
+            "students_total": len(students),
+            "students_reacted": reacted_students,
+            "students_commented": student_commenters,
+            "comments_total": total_comments,
+        },
+        "top_media": top_media,
+        "students": student_participation,
+    }
 
     return render_template(
         "sessions/detail.html",
@@ -199,7 +341,123 @@ def session_detail(session_id):
         media_total_count=media_total_count,
         has_media_filters=has_media_filters,
         viewing_student=viewing_student,
+        analytics=analytics,
     )
+
+
+@bp.route("/sessions/<int:session_id>/reactions/reset", methods=["POST"])
+@login_required
+def reset_session_reactions(session_id: int):
+    """Bulk reset all reactions for every media item
+    in a session (teacher/admin/staff)."""
+    session_obj = Session.query.get_or_404(session_id)
+
+    # Permission: teacher who owns the session, or admin/staff
+    if current_user.is_teacher():
+        if session_obj.created_by_id != current_user.id:
+            flash("You can only manage reactions for your own sessions.", "danger")
+            return redirect(url_for("sessions.session_detail", session_id=session_id))
+    elif not (
+        getattr(current_user, "is_admin", lambda: False)()
+        or getattr(current_user, "is_staff", lambda: False)()
+    ):
+        flash("Access denied.", "danger")
+        return redirect(url_for("sessions.session_detail", session_id=session_id))
+
+    try:
+        # Reset all interactions for media in this session
+        media_ids = [m.id for m in session_obj.media.all()]
+        if media_ids:
+            StudentMediaInteraction.query.filter(
+                StudentMediaInteraction.media_id.in_(media_ids)
+            ).update(
+                {
+                    StudentMediaInteraction.liked_graph: False,
+                    StudentMediaInteraction.liked_eye: False,
+                    StudentMediaInteraction.liked_read: False,
+                },
+                synchronize_session=False,
+            )
+
+            # Reset denormalized counts on each media
+            Media.query.filter(Media.id.in_(media_ids)).update(
+                {
+                    Media.graph_likes: 0,
+                    Media.eye_likes: 0,
+                    Media.read_likes: 0,
+                },
+                synchronize_session=False,
+            )
+        db.session.commit()
+        flash("All reactions cleared for this session.", "success")
+    except Exception:
+        db.session.rollback()
+        flash("Failed to clear reactions for this session.", "danger")
+    return redirect(url_for("sessions.session_detail", session_id=session_id))
+
+
+@bp.route(
+    "/sessions/<int:session_id>/students/<int:student_id>/reactions/reset",
+    methods=["POST"],
+)
+@login_required
+def reset_student_reactions(session_id: int, student_id: int):
+    """Inline control: reset a single student's reactions within the session."""
+    session_obj = Session.query.get_or_404(session_id)
+    student = Student.query.get_or_404(student_id)
+
+    # Permission: teacher who owns the session, or admin/staff
+    if current_user.is_teacher():
+        if session_obj.created_by_id != current_user.id:
+            flash("You can only manage your own sessions.", "danger")
+            return redirect(url_for("sessions.session_detail", session_id=session_id))
+    elif not (
+        getattr(current_user, "is_admin", lambda: False)()
+        or getattr(current_user, "is_staff", lambda: False)()
+    ):
+        flash("Access denied.", "danger")
+        return redirect(url_for("sessions.session_detail", session_id=session_id))
+
+    # Ensure student belongs to session
+    if student.section_id != session_id:
+        flash("Student does not belong to this session.", "warning")
+        return redirect(url_for("sessions.session_detail", session_id=session_id))
+
+    try:
+        # Find all interactions for this student's media within this session
+        media_ids = [m.id for m in session_obj.media.all()]
+        if media_ids:
+            StudentMediaInteraction.query.filter(
+                StudentMediaInteraction.student_id == student_id,
+                StudentMediaInteraction.media_id.in_(media_ids),
+            ).update(
+                {
+                    StudentMediaInteraction.liked_graph: False,
+                    StudentMediaInteraction.liked_eye: False,
+                    StudentMediaInteraction.liked_read: False,
+                },
+                synchronize_session=False,
+            )
+
+            # Recompute media denormalized counts efficiently
+            for m in session_obj.media.all():
+                m.graph_likes = StudentMediaInteraction.query.filter_by(
+                    media_id=m.id, liked_graph=True
+                ).count()
+                m.eye_likes = StudentMediaInteraction.query.filter_by(
+                    media_id=m.id, liked_eye=True
+                ).count()
+                m.read_likes = StudentMediaInteraction.query.filter_by(
+                    media_id=m.id, liked_read=True
+                ).count()
+
+        db.session.commit()
+        flash(f"Cleared reactions for {student.character_name}.", "success")
+    except Exception:
+        db.session.rollback()
+        flash("Failed to clear reactions for this student.", "danger")
+
+    return redirect(url_for("sessions.session_detail", session_id=session_id))
 
 
 @bp.route("/sessions")

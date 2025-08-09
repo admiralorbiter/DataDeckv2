@@ -169,6 +169,18 @@ Acceptance: ✅ **COMPLETE** - All core session management features implemented:
 - Single-select enforced; switching badges updates selection and counts live via AJAX
 - Tooltip help text appears on hover/focus; counts and selected state persist on refresh
 
+#### M7.5 — Session Analytics & Teacher Controls ✅ **COMPLETED**
+- [x] Session analytics on session detail (teacher-only):
+  - Total reactions by badge (graph/eye/read) and grand total
+  - Participation: # students reacted, # students commented, total comments
+  - Top media by reactions (top 3)
+- [x] Per-student participation table (teacher-only): uploads, reacted?, comments, quick links
+- [x] Bulk control: Reset all reactions for a session (`POST /sessions/<id>/reactions/reset`)
+- [x] Inline control: Reset reactions for a single student in a session (`POST /sessions/<id>/students/<student_id>/reactions/reset`)
+- [x] Per-media control: Reset reactions for a single post (`POST /media/<id>/reactions/reset`)
+
+Acceptance: Analytics render without page errors; resets update denormalized counts and UI on refresh; permissions enforced (teacher owner/admin/staff only).
+
 #### M8 — Admin & Observer Dashboards
 - [ ] Admin: District CRUD + toggle; Observer management (create/deactivate/password)
 - [ ] Teacher district assignment/update

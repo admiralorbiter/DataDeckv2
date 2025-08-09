@@ -14,7 +14,7 @@ from flask import (
     session,
     url_for,
 )
-from flask_login import current_user
+from flask_login import current_user, login_required
 
 from forms import (
     CommentForm,
@@ -642,3 +642,53 @@ def react_to_media(media_id, badge_type):
         db.session.rollback()
         current_app.logger.error(f"Reaction error: {e}")
         return jsonify({"success": False, "error": "Internal server error"}), 500
+
+
+@bp.route("/media/<int:media_id>/reactions/reset", methods=["POST"])
+@login_required
+def clear_reactions(media_id):
+    """Clear all reactions (badges) for a media item. Teachers/admin/staff only.
+
+    This preserves comments and StudentMediaInteraction rows, but sets all
+    liked_* flags to False and resets counts on Media to zero.
+    """
+    media = Media.query.get_or_404(media_id)
+
+    # Permission: teacher who owns session, or admin/staff
+    if current_user.is_teacher():
+        if media.session.created_by_id != current_user.id:
+            flash("You can only manage reactions for your own session.", "danger")
+            return redirect(url_for("media.media_detail", media_id=media_id))
+    elif not (
+        getattr(current_user, "is_admin", lambda: False)()
+        or getattr(current_user, "is_staff", lambda: False)()
+    ):
+        flash("Access denied.", "danger")
+        return redirect(url_for("media.media_detail", media_id=media_id))
+
+    try:
+        # Bulk reset liked flags
+        StudentMediaInteraction.query.filter_by(media_id=media_id).update(
+            {
+                StudentMediaInteraction.liked_graph: False,
+                StudentMediaInteraction.liked_eye: False,
+                StudentMediaInteraction.liked_read: False,
+            },
+            synchronize_session=False,
+        )
+
+        # Reset denormalized counts on Media
+        media.graph_likes = 0
+        media.eye_likes = 0
+        media.read_likes = 0
+
+        db.session.commit()
+        flash("All reactions cleared for this post.", "success")
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Clear reactions error: {e}")
+        flash("Failed to clear reactions.", "danger")
+
+    # Redirect back to referrer if available, else media detail
+    ref = request.headers.get("Referer")
+    return redirect(ref or url_for("media.media_detail", media_id=media_id))

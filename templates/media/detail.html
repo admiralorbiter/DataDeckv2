@@ -268,8 +268,19 @@
                 <div class="col-12">
                     <div class="dd-card">
                         <div class="card-body">
-                            {% from '_components/reactions.html' import reaction_badges %}
-                            {{ reaction_badges(media, interaction_info, is_student_view, true) }}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="flex-grow-1">
+                                    {% from '_components/reactions.html' import reaction_badges %}
+                                    {{ reaction_badges(media, interaction_info, is_student_view, true) }}
+                                </div>
+                                {% if current_user.is_authenticated and (current_user.is_teacher() or current_user.is_admin() or current_user.is_staff()) %}
+                                <form method="POST" action="{{ url_for('media.clear_reactions', media_id=media.id) }}" class="ms-3">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Clear all reactions for this post?')">
+                                        <i class="fas fa-broom me-1"></i> Clear Reactions
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>

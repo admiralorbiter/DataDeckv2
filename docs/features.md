@@ -31,11 +31,13 @@
 - [x] **Service Testing** - Session service, conflict resolution, student generation
 - [x] **Linting Compliance** - All code passes linting checks
 
-### Interaction & Engagement (M6–M7)
+### Interaction & Engagement (M6–M7.5)
 - [x] **Comments System** - Nested comments with replies and attribution
 - [x] **Reaction System (Badges)** - Single-select badges (Graph, Eye, Read)
   - Clickable on post/media detail page only; read-only in session grid
   - Live count updates via AJAX; per-student selection persisted
+- [x] **Session Analytics (Teacher)** - Totals, participation, and top media
+- [x] **Teacher Controls** - Reset reactions (session-wide, per-student, per-media)
 
 ## In Progress Features 🚧
 
@@ -74,7 +76,7 @@
 | Module Management | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Student Management | ✅ | ✅ | ✅ Own | ❌ | ❌ |
 | Media Upload | 📋 | 📋 | 📋 | ❌ | 📋 |
-| Comments/Reactions | 📋 | 📋 | ✅ View | ❌ | ✅ |
+| Comments/Reactions | 📋 | 📋 | ✅ View/Reset | ❌ | ✅ |
 
 **Legend**: ✅ Implemented | 📋 Planned | ❌ Not Applicable
 

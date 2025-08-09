@@ -172,6 +172,12 @@ All M3.5 tasks have been successfully completed:
 - Added `static/js/reactions.js` for AJAX reactions with CSRF and tooltip init
 - Styling in `static/css/components.css` for selected/hover states and count overlays
 
+### Post-M3.5 Update (M7.5)
+- Session analytics cards on session detail (teacher-only): reactions, participation, top media
+- Per-student participation table with inline “Reset Reactions” control
+- Bulk “Reset All Reactions” button in Session Media header
+- Per-media “Clear Reactions” button on media detail page
+
 ## Future Enhancements (Post-M3.5)
 - Sessions list pagination (depends on M3 backend implementation)
 - Document student login scope in `docs/ACCOUNTS.md`

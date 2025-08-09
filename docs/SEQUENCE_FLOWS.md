@@ -42,6 +42,14 @@ Below flows outline request/response steps for critical user operations.
 3. Browser: Update UI counts and selected state
 4. Session grid: badges render read-only (no click handler)
 
+### 4b) Teacher Reset Controls
+1. Session bulk reset: Teacher submits POST `/sessions/<session_id>/reactions/reset`
+   - Server: set all `liked_*` flags to false for interactions in session media; zero media counts
+2. Per-student reset: Teacher submits POST `/sessions/<session_id>/students/<student_id>/reactions/reset`
+   - Server: clear flags for that student on session media; recompute media counts
+3. Per-media reset: Teacher submits POST `/media/<media_id>/reactions/reset`
+   - Server: clear flags for that media; zero media counts
+
 ### 5) Comment on a Post
 1. Browser: POST `/post/<media_id>` with `text` (and optional `parent_id`)
 2. Server:
