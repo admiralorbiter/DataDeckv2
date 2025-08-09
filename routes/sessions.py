@@ -3,8 +3,8 @@ from datetime import datetime
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
-from forms import SessionFilterForm, StartSessionForm
-from models import Session, db
+from forms import MediaFilterForm, SessionFilterForm, StartSessionForm
+from models import Media, Session, db
 from services.session_service import SessionConflictError, SessionService
 
 from .base import create_blueprint
@@ -80,7 +80,7 @@ def start_session():
 @bp.route("/sessions/<int:session_id>")
 @login_required
 def session_detail(session_id):
-    """View session details with media and students."""
+    """View session details with media and students, including media filtering."""
     session = Session.query.get_or_404(session_id)
 
     # Check ownership for teachers
@@ -88,12 +88,89 @@ def session_detail(session_id):
         flash("You can only view your own sessions.", "danger")
         return redirect(url_for("sessions.list_sessions"))
 
-    # Get students and media for this session
+    # Initialize media filter form
+    media_filter_form = MediaFilterForm()
+    media_filter_form.populate_tag_choices(session_id)
+
+    # Get students for this session
     students = session.students.all()
-    media = session.media.limit(50).all()  # Latest 50 media items
+
+    # Build media query with filtering
+    media_query = Media.query.filter(Media.session_id == session_id)
+
+    # Apply filters from request args
+    media_type_filter = request.args.get("media_type", "")
+    graph_tag_filter = request.args.get("graph_tag", "")
+    variable_tag_filter = request.args.get("variable_tag", "")
+    is_graph_filter = request.args.get("is_graph", "")
+    posted_by_filter = request.args.get("posted_by", "")
+
+    # Set form data from query parameters for persistence
+    if media_type_filter:
+        media_filter_form.media_type.data = media_type_filter
+    if graph_tag_filter:
+        media_filter_form.graph_tag.data = graph_tag_filter
+    if variable_tag_filter:
+        media_filter_form.variable_tag.data = variable_tag_filter
+    if is_graph_filter:
+        media_filter_form.is_graph.data = is_graph_filter
+    if posted_by_filter:
+        media_filter_form.posted_by.data = posted_by_filter
+
+    # Apply media type filter
+    if media_type_filter:
+        media_query = media_query.filter(Media.media_type == media_type_filter)
+
+    # Apply graph tag filter
+    if graph_tag_filter:
+        media_query = media_query.filter(Media.graph_tag == graph_tag_filter)
+
+    # Apply variable tag filter
+    if variable_tag_filter:
+        media_query = media_query.filter(Media.variable_tag == variable_tag_filter)
+
+    # Apply is_graph filter
+    if is_graph_filter == "true":
+        media_query = media_query.filter(Media.is_graph.is_(True))
+    elif is_graph_filter == "false":
+        media_query = media_query.filter(Media.is_graph.is_(False))
+
+    # Apply posted_by filter
+    if posted_by_filter == "students":
+        media_query = media_query.filter(Media.student_id.isnot(None))
+    elif posted_by_filter == "teacher":
+        media_query = media_query.filter(Media.posted_by_admin_id.isnot(None))
+
+    # Pagination for media
+    page = request.args.get("page", 1, type=int)
+    per_page = 20  # Media items per page
+
+    # Execute paginated query with ordering
+    media_pagination = media_query.order_by(Media.uploaded_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+
+    media = media_pagination.items
+    media_total_count = media_pagination.total
+
+    # Check if any filters are active
+    has_media_filters = (
+        media_type_filter
+        or graph_tag_filter
+        or variable_tag_filter
+        or is_graph_filter
+        or posted_by_filter
+    )
 
     return render_template(
-        "sessions/detail.html", session=session, students=students, media=media
+        "sessions/detail.html",
+        session=session,
+        students=students,
+        media=media,
+        media_filter_form=media_filter_form,
+        media_pagination=media_pagination,
+        media_total_count=media_total_count,
+        has_media_filters=has_media_filters,
     )
 
 

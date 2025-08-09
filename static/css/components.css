@@ -32,6 +32,14 @@
 .dd-badge.paused { background: rgba(245,158,11,0.1); color: #d97706; }
 .dd-badge.archived { background: rgba(107,114,128,0.1); color: #6b7280; }
 
+/* Small form elements for media filtering */
+.form-label-sm {
+  font-size: var(--fs-body-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-1);
+}
+
 /* Filter section styling */
 .dd-filter-section {
   background: var(--color-surface);

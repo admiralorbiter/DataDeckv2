@@ -146,30 +146,145 @@
         <div class="col-md-6">
             <div class="dd-card">
                 <div class="p-3" style="border-bottom:1px solid var(--color-border);">
-                    <h5 class="mb-0"><i class="fas fa-images"></i> Recent Media</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-images"></i> Session Media
+                            {% if media_total_count is defined %}
+                                <small class="text-muted">({{ media_total_count }})</small>
+                            {% endif %}
+                        </h5>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#mediaFilters" aria-expanded="false">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
+                    </div>
                 </div>
+
+                <!-- Media Filter Section (Collapsible) -->
+                <div class="collapse" id="mediaFilters">
+                    <div class="p-3" style="border-bottom:1px solid var(--color-border); background-color: var(--color-surface);">
+                        <form method="GET" action="{{ url_for('sessions.session_detail', session_id=session.id) }}">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label for="media_type" class="form-label form-label-sm">Type</label>
+                                    {{ media_filter_form.media_type(class="form-control form-control-sm", id="media_type") }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="graph_tag" class="form-label form-label-sm">Graph Tag</label>
+                                    {{ media_filter_form.graph_tag(class="form-control form-control-sm", id="graph_tag") }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="variable_tag" class="form-label form-label-sm">Variable Tag</label>
+                                    {{ media_filter_form.variable_tag(class="form-control form-control-sm", id="variable_tag") }}
+                                </div>
+                            </div>
+                            <div class="row g-2 mt-2">
+                                <div class="col-md-4">
+                                    <label for="is_graph" class="form-label form-label-sm">Content</label>
+                                    {{ media_filter_form.is_graph(class="form-control form-control-sm", id="is_graph") }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="posted_by" class="form-label form-label-sm">Posted By</label>
+                                    {{ media_filter_form.posted_by(class="form-control form-control-sm", id="posted_by") }}
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <button type="submit" class="btn dd-btn-primary btn-sm me-2">
+                                        <i class="fas fa-search"></i> Filter
+                                    </button>
+                                    {% if has_media_filters %}
+                                        <a href="{{ url_for('sessions.session_detail', session_id=session.id) }}" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-times"></i> Clear
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Media Content -->
                 <div class="p-3">
                     {% if media %}
                         {% for item in media %}
                         <div class="dd-card mb-2">
                             <div class="p-2">
-                                <h6 class="mb-1">{{ item.title }}</h6>
-                                <small class="text-muted">
-                                    {% if item.student %}
-                                        by {{ item.student.character_name }}
-                                    {% else %}
-                                        by Teacher
-                                    {% endif %}
-                                    • {{ item.uploaded_at.strftime('%b %d at %I:%M %p') }}
-                                </small>
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ item.title }}</h6>
+                                        <small class="text-muted">
+                                            {% if item.student %}
+                                                by {{ item.student.character_name }}
+                                            {% else %}
+                                                by Teacher
+                                            {% endif %}
+                                            • {{ item.uploaded_at.strftime('%b %d at %I:%M %p') }}
+                                        </small>
+
+                                        <!-- Tags and Metadata -->
+                                        <div class="mt-1">
+                                            <span class="badge bg-light text-dark me-1">{{ item.media_type|title }}</span>
+                                            {% if item.is_graph %}
+                                                <span class="badge bg-primary me-1">Graph</span>
+                                            {% endif %}
+                                            {% if item.graph_tag %}
+                                                <span class="badge bg-info me-1">{{ item.graph_tag }}</span>
+                                            {% endif %}
+                                            {% if item.variable_tag %}
+                                                <span class="badge bg-success me-1">{{ item.variable_tag }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-muted">
+                                            <i class="fas fa-thumbs-up"></i> {{ item.graph_likes + item.eye_likes + item.read_likes }}
+                                        </small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
-                        {% if media|length == 50 %}
-                            <small class="text-muted">Showing latest 50 uploads...</small>
+
+                        <!-- Media Pagination -->
+                        {% if media_pagination and media_pagination.pages > 1 %}
+                            <nav aria-label="Media pagination" class="text-center">
+                                <ul class="pagination pagination-sm justify-content-center">
+                                    <li class="page-item {% if not media_pagination.has_prev %}disabled{% endif %}">
+                                        <a class="page-link"
+                                           href="{% if media_pagination.has_prev %}{{ url_for('sessions.session_detail', session_id=session.id, page=media_pagination.prev_num, media_type=request.args.get('media_type', ''), graph_tag=request.args.get('graph_tag', ''), variable_tag=request.args.get('variable_tag', ''), is_graph=request.args.get('is_graph', ''), posted_by=request.args.get('posted_by', '')) }}{% else %}#{% endif %}">
+                                            Previous
+                                        </a>
+                                    </li>
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ media_pagination.page }} of {{ media_pagination.pages }}</span>
+                                    </li>
+                                    <li class="page-item {% if not media_pagination.has_next %}disabled{% endif %}">
+                                        <a class="page-link"
+                                           href="{% if media_pagination.has_next %}{{ url_for('sessions.session_detail', session_id=session.id, page=media_pagination.next_num, media_type=request.args.get('media_type', ''), graph_tag=request.args.get('graph_tag', ''), variable_tag=request.args.get('variable_tag', ''), is_graph=request.args.get('is_graph', ''), posted_by=request.args.get('posted_by', '')) }}{% else %}#{% endif %}">
+                                            Next
+                                        </a>
+                                    </li>
+                                </ul>
+                                <div class="pagination-info text-muted mt-2">
+                                    <small>
+                                        Showing {{ ((media_pagination.page - 1) * media_pagination.per_page) + 1 }} to
+                                        {{ media_pagination.page * media_pagination.per_page if media_pagination.page * media_pagination.per_page <= media_pagination.total else media_pagination.total }}
+                                        of {{ media_pagination.total }} media items
+                                    </small>
+                                </div>
+                            </nav>
                         {% endif %}
                     {% else %}
-                        <p class="text-muted">No media uploads yet. Students can upload once the session is active.</p>
+                        <div class="text-center py-4">
+                            {% if has_media_filters %}
+                                <i class="fas fa-search fa-2x text-muted mb-2"></i>
+                                <p class="text-muted">No media matches your filters.</p>
+                                <a href="{{ url_for('sessions.session_detail', session_id=session.id) }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-times"></i> Clear Filters
+                                </a>
+                            {% else %}
+                                <i class="fas fa-images fa-2x text-muted mb-2"></i>
+                                <p class="text-muted">No media uploads yet. Students can upload once the session is active.</p>
+                            {% endif %}
+                        </div>
                     {% endif %}
                 </div>
             </div>

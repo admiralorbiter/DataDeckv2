@@ -18,7 +18,7 @@ This is the actionable, task-oriented plan to deliver the Flask rewrite. It tran
 
 Acceptance: `flask run` boots; `pytest` green on a clean DB; pre-commit enforced locally and in CI.
 
-#### M1 — Data Model & Seed
+#### M1 — Data Model & Seed ✅ COMPLETED
 - [x] Implement models (SQLAlchemy): `User`, `Observer`, `District`, `School`, `Session`, `Student`, `Media`, `Comment`, `StudentMediaInteraction`
 - [x] Add indexes/constraints per `docs/FLASK_REWRITE_PLAN.md`
 - [x] Schema creation via app startup (`db.create_all()`)
@@ -27,7 +27,7 @@ Acceptance: `flask run` boots; `pytest` green on a clean DB; pre-commit enforced
 
 Acceptance: Schema creates successfully via `db.create_all()`; seed creates demo teacher+session+students; factories generate valid objects.
 
-#### M2 — Authentication & Roles
+#### M2 — Authentication & Roles ✅ COMPLETED
 - [x] Teacher/Admin login/logout with Flask-Login
 - [x] Observer login/logout (separate session namespace)
 - [x] Decorators: `@observer_required`, `@student_required` (session-based)
@@ -37,7 +37,7 @@ Acceptance: Schema creates successfully via `db.create_all()`; seed creates demo
 
 Acceptance: Valid credentials redirect to dashboards; protected routes gated by role; password change persists.
 
-#### M3 — Sessions Module 🔄 PARTIALLY COMPLETED
+#### M3 — Sessions Module ✅ COMPLETED
 - [x] StartSessionForm (hour/section, module, character_set)
 - [x] Uniqueness rule (teacher, section, active) enforced
 - [x] Create session → generate 20 students (name + PIN + character)
@@ -49,10 +49,10 @@ Acceptance: Valid credentials redirect to dashboards; protected routes gated by 
 - [x] Session delete functionality
 - [x] Session pause/unpause functionality
 - [x] Select # of students to generate
-- [ ] Media filtering within sessions (graph_tag, variable_tag)
+- [x] Media filtering within sessions (graph_tag, variable_tag)
 
 
-Acceptance: ✅ Core session creation, management, filtering, pagination, delete, pause/unpause, and student count selection complete with robust UI; ❌ Advanced media filtering still needed.
+Acceptance: ✅ **COMPLETE** - All core session management features implemented: creation, filtering, pagination, delete, pause/unpause, student count selection, and advanced media filtering with robust UI.
 
 #### M3.5 — UI/Branding & Frontend Foundation ✅ COMPLETED
 - [x] Establish brand system and tokens

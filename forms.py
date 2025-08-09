@@ -9,6 +9,7 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, Email, EqualTo, NumberRange, Optional
 
+from models import db
 from models.district import District
 from models.module import Module
 from models.school import School
@@ -213,3 +214,93 @@ class SessionFilterForm(FlaskForm):
         choices = [("", "All Modules")]
         choices.extend([(module.id, module.name) for module in modules])
         self.module.choices = choices
+
+
+class MediaFilterForm(FlaskForm):
+    """Form for filtering media within a session by tags and type."""
+
+    media_type = SelectField(
+        "Media Type",
+        choices=[
+            ("", "All Types"),
+            ("image", "Images"),
+            ("video", "Videos"),
+        ],
+        validators=[Optional()],
+        default="",
+    )
+
+    graph_tag = SelectField(
+        "Graph Tag",
+        choices=[("", "All Graph Tags")],  # Will be populated dynamically
+        validators=[Optional()],
+        default="",
+    )
+
+    variable_tag = SelectField(
+        "Variable Tag",
+        choices=[("", "All Variable Tags")],  # Will be populated dynamically
+        validators=[Optional()],
+        default="",
+    )
+
+    is_graph = SelectField(
+        "Graph Content",
+        choices=[
+            ("", "All Content"),
+            ("true", "Graph Content Only"),
+            ("false", "Non-Graph Content Only"),
+        ],
+        validators=[Optional()],
+        default="",
+    )
+
+    posted_by = SelectField(
+        "Posted By",
+        choices=[
+            ("", "All Authors"),
+            ("students", "Students"),
+            ("teacher", "Teacher"),
+        ],
+        validators=[Optional()],
+        default="",
+    )
+
+    submit = SubmitField("Apply Filters")
+
+    def populate_tag_choices(self, session_id):
+        """Populate graph_tag and variable_tag choices from session media."""
+        from models import Media
+
+        # Get unique graph tags from this session's media
+        graph_tags = (
+            db.session.query(Media.graph_tag)
+            .filter(
+                Media.session_id == session_id,
+                Media.graph_tag.isnot(None),
+                Media.graph_tag != "",
+            )
+            .distinct()
+            .all()
+        )
+
+        # Get unique variable tags from this session's media
+        variable_tags = (
+            db.session.query(Media.variable_tag)
+            .filter(
+                Media.session_id == session_id,
+                Media.variable_tag.isnot(None),
+                Media.variable_tag != "",
+            )
+            .distinct()
+            .all()
+        )
+
+        # Update choices
+        graph_choices = [("", "All Graph Tags")]
+        graph_choices.extend([(tag[0], tag[0]) for tag in graph_tags])
+        self.graph_tag.choices = graph_choices
+
+        variable_choices = [("", "All Variable Tags")]
+        variable_choices.extend([(tag[0], tag[0]) for tag in variable_tags])
+        self.variable_tag.choices = variable_choices
