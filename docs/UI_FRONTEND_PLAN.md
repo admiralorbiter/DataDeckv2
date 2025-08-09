@@ -166,6 +166,12 @@ All M3.5 tasks have been successfully completed:
 - Role-based navigation with dynamic dropdowns
 - Responsive design with mobile-first approach
 
+### Post-M3.5 Update (M7)
+- Implemented `reaction_badges` macro in `templates/_components/reactions.html`
+- Integrated on post/media detail pages (clickable) and session grid (read-only)
+- Added `static/js/reactions.js` for AJAX reactions with CSRF and tooltip init
+- Styling in `static/css/components.css` for selected/hover states and count overlays
+
 ## Future Enhancements (Post-M3.5)
 - Sessions list pagination (depends on M3 backend implementation)
 - Document student login scope in `docs/ACCOUNTS.md`

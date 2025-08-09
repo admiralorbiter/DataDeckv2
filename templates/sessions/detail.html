@@ -311,6 +311,22 @@
                                                 <span class="badge bg-warning me-1"><i class="fas fa-images"></i> Data Deck</span>
                                             {% endif %}
                                         </div>
+
+                                        <!-- Reaction Badges (Non-clickable in grid view) -->
+                                        {% if viewing_student %}
+                                            {% from '_components/reactions.html' import reaction_badges %}
+                                            {% set interaction_info = {
+                                                'graph_likes': item.graph_likes,
+                                                'eye_likes': item.eye_likes,
+                                                'read_likes': item.read_likes,
+                                                'user_interactions': {
+                                                    'liked_graph': item.student_interactions and item.student_interactions.liked_graph,
+                                                    'liked_eye': item.student_interactions and item.student_interactions.liked_eye,
+                                                    'liked_read': item.student_interactions and item.student_interactions.liked_read
+                                                }
+                                            } %}
+                                            {{ reaction_badges(item, interaction_info, true, false) }}
+                                        {% endif %}
                                     </div>
                                     <div class="text-end">
                                         <small class="text-muted d-block mb-3">

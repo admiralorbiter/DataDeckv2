@@ -90,3 +90,141 @@
   padding: var(--space-1) var(--space-2);
   font-size: var(--fs-body-sm);
 }
+
+/* Reaction Badges */
+.reaction-badges {
+    margin: 1rem 0;
+}
+
+.reaction-badge {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.reaction-badge:hover {
+    transform: scale(1.1);
+}
+
+/* Non-clickable badges styling */
+.reaction-badges[data-clickable="false"] .reaction-badge {
+    cursor: default;
+}
+
+.reaction-badges[data-clickable="false"] .reaction-badge:hover {
+    transform: none;
+}
+
+.reaction-badges[data-clickable="false"] .badge-icon {
+    filter: grayscale(100%) opacity(0.6);
+}
+
+.badge-container {
+    position: relative;
+    display: inline-block;
+}
+
+.badge-icon {
+    width: 56px;
+    height: 56px;
+    filter: grayscale(100%) opacity(0.7);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+/* Non-clickable badges should not show pointer cursor */
+.reaction-badges[data-clickable="false"] .badge-icon {
+    cursor: default;
+}
+
+.badge-icon:hover {
+    filter: grayscale(0%) opacity(1);
+    transform: scale(1.1);
+}
+
+/* Non-clickable badges should not have hover effects */
+.reaction-badges[data-clickable="false"] .badge-icon:hover {
+    filter: grayscale(100%) opacity(0.6);
+    transform: none;
+}
+
+.badge-icon.selected {
+    filter: grayscale(0%) opacity(1);
+    transform: scale(1.1);
+}
+
+.reaction-badges .badge-count {
+    bottom: -6px;
+    top: auto;
+    right: -6px;
+    background: var(--bs-danger);
+}
+
+.badge-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--bs-primary);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 2px solid white;
+}
+
+.badge-explanation {
+    margin-top: 0.5rem;
+}
+
+.badge-explanation a {
+    color: var(--bs-primary);
+}
+
+.badge-explanation a:hover {
+    text-decoration: underline !important;
+}
+
+/* Tooltip customization */
+.tooltip-inner {
+    max-width: 300px;
+    text-align: left;
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .reaction-badges .d-flex {
+        flex-wrap: wrap;
+    }
+
+    .reaction-badge {
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Clickable container affordance */
+.reaction-badges.is-clickable {
+    background: var(--bs-light);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+}
+
+.reaction-badges.is-clickable:hover {
+    background: #eaf3ff;
+}
+
+.reaction-badges .d-flex.align-items-center > .me-3 small {
+    font-weight: 600;
+}
+
+.reaction-badge .badge-container {
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 6px;
+}

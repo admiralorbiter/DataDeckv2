@@ -1,0 +1,73 @@
+{# Reaction Badges Component #}
+{# Usage: {% from '_components/reactions.html' import reaction_badges %} #}
+{# Required context: media, interaction_info, is_student_view #}
+{# Optional context: is_clickable (default: true) - controls whether badges are interactive #}
+
+{% macro reaction_badges(media, interaction_info, is_student_view, is_clickable=true) %}
+<div class="reaction-badges" data-media-id="{{ media.id }}" data-clickable="{{ 'true' if is_clickable else 'false' }}">
+  <div class="d-flex align-items-center mb-2">
+    <div class="me-3">
+      <small class="text-muted">Badges:</small>
+    </div>
+
+    <!-- Graph Guru Badge -->
+    <div class="reaction-badge me-2" data-badge-type="graph">
+      <div class="badge-container position-relative">
+        <img src="{{ url_for('static', filename='img/graph-icon.png') }}"
+             alt="Graph Guru"
+             class="badge-icon {% if interaction_info.user_interactions and interaction_info.user_interactions.liked_graph %}selected{% endif %}"
+             data-bs-toggle="tooltip"
+             data-bs-placement="top"
+             title="Graph Guru - Use this badge for graphs that are easy to understand and make trends in the data clear to the audience">
+        <div class="badge-count">{{ interaction_info.graph_likes }}</div>
+      </div>
+    </div>
+
+    <!-- Expert Engager Badge -->
+    <div class="reaction-badge me-2" data-badge-type="eye">
+      <div class="badge-container position-relative">
+        <img src="{{ url_for('static', filename='img/eye-icon.png') }}"
+             alt="Expert Engager"
+             class="badge-icon {% if interaction_info.user_interactions and interaction_info.user_interactions.liked_eye %}selected{% endif %}"
+             data-bs-toggle="tooltip"
+             data-bs-placement="top"
+             title="Expert Engager - The design of the post is eye-catching, intuitive, and relevant to the topic of the data">
+        <div class="badge-count">{{ interaction_info.eye_likes }}</div>
+      </div>
+    </div>
+
+    <!-- Supreme Storyteller Badge -->
+    <div class="reaction-badge me-2" data-badge-type="read">
+      <div class="badge-container position-relative">
+        <img src="{{ url_for('static', filename='img/read-icon.png') }}"
+             alt="Supreme Storyteller"
+             class="badge-icon {% if interaction_info.user_interactions and interaction_info.user_interactions.liked_read %}selected{% endif %}"
+             data-bs-toggle="tooltip"
+             data-bs-placement="top"
+             title="Supreme Storyteller - The analysis provided clearly connects the graph created to the story being told with that data">
+        <div class="badge-count">{{ interaction_info.read_likes }}</div>
+      </div>
+    </div>
+  </div>
+
+  {% if is_student_view %}
+    {% if is_clickable %}
+      <div class="badge-explanation">
+        <small class="text-muted">
+          <i class="fas fa-info-circle me-1"></i>
+          Click a badge to give feedback on this post
+        </small>
+      </div>
+    {% else %}
+      <div class="badge-explanation">
+        <small class="text-muted">
+          <i class="fas fa-info-circle me-1"></i>
+          <a href="{{ url_for('media.media_detail', media_id=media.id) }}" class="text-decoration-none">
+            Click here to view and react to this post
+          </a>
+        </small>
+      </div>
+    {% endif %}
+  {% endif %}
+</div>
+{% endmacro %}

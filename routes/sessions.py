@@ -178,9 +178,16 @@ def session_detail(session_id):
     viewing_student = None
     student_id = session.get("student_id")
     if student_id:
-        from models import Student
+        from models import Student, StudentMediaInteraction
 
         viewing_student = Student.query.get(student_id)
+
+        # Add student interaction data to each media item
+        for item in media:
+            interaction = StudentMediaInteraction.query.filter_by(
+                student_id=student_id, media_id=item.id
+            ).first()
+            item.student_interactions = interaction
 
     return render_template(
         "sessions/detail.html",

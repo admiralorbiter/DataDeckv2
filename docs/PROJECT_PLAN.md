@@ -154,12 +154,20 @@ Acceptance: ✅ **COMPLETE** - All core session management features implemented:
 
 **Acceptance: ✅ ACHIEVED** - Replies render nested with proper attribution; comment counts update accurately; post views integrate seamlessly with existing media workflow.
 
-#### M7 — Reactions/Badges
-- [ ] Decide reaction semantics (toggle vs single-select) and implement consistently
-- [ ] Endpoint: `POST /media/<id>/react/<type>` returns `{success, counts, user_like}`
-- [ ] UI updates without full reload
+#### M7 — Reactions/Badges ✅ **COMPLETED**
+- [x] Behavior: single-select per student per media (`graph`, `eye`, `read`)
+- [x] Endpoint: `POST /media/<id>/react/<badge_type>` returns `{ success, counts, user_like }`
+- [x] AuthZ: student must belong to the media's session (403 otherwise)
+- [x] UI: `templates/_components/reactions.html` macro renders icons, counts, tooltips
+- [x] UX rule: badges clickable only on the post/media detail page; read-only in session grid
+- [x] JS: `static/js/reactions.js` (tooltips init, CSRF header, single-select UI update)
+- [x] Styling: `static/css/components.css` with selected/hover states and count overlays
+- [x] Data: counts denormalized on `Media`; per-student selection in `StudentMediaInteraction`
 
-Acceptance: Consistent behavior across session grid and post; counts update live.
+**Acceptance: ✅ ACHIEVED**
+- Badges are clickable for students on the post detail page only; session grid is non-interactive
+- Single-select enforced; switching badges updates selection and counts live via AJAX
+- Tooltip help text appears on hover/focus; counts and selected state persist on refresh
 
 #### M8 — Admin & Observer Dashboards
 - [ ] Admin: District CRUD + toggle; Observer management (create/deactivate/password)

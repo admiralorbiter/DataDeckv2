@@ -31,6 +31,12 @@
 - [x] **Service Testing** - Session service, conflict resolution, student generation
 - [x] **Linting Compliance** - All code passes linting checks
 
+### Interaction & Engagement (M6–M7)
+- [x] **Comments System** - Nested comments with replies and attribution
+- [x] **Reaction System (Badges)** - Single-select badges (Graph, Eye, Read)
+  - Clickable on post/media detail page only; read-only in session grid
+  - Live count updates via AJAX; per-student selection persisted
+
 ## In Progress Features 🚧
 
 ### Student Management (M4 - Next Priority)
@@ -46,12 +52,6 @@
 - [ ] **Media Editing** - Update tags and recompute titles
 - [ ] **Media Deletion** - Remove media with file cleanup
 - [ ] **Project Galleries** - Multi-image project uploads with gallery view
-
-### Interaction & Engagement (M6-M7)
-- [ ] **Comments System** - Nested comments with replies and attribution
-- [ ] **Reaction System** - Badge-based reactions (Graph Guru, Expert Engager, Supreme Storyteller)
-- [ ] **Student Interaction Tracking** - Track engagement and participation
-- [ ] **Real-time Updates** - Live reaction and comment updates
 
 ### Enhanced Dashboards (M8)
 - [ ] **Observer Dashboard** - District-wide activity monitoring
@@ -74,7 +74,7 @@
 | Module Management | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Student Management | ✅ | ✅ | ✅ Own | ❌ | ❌ |
 | Media Upload | 📋 | 📋 | 📋 | ❌ | 📋 |
-| Comments/Reactions | 📋 | 📋 | 📋 | ❌ | 📋 |
+| Comments/Reactions | 📋 | 📋 | ✅ View | ❌ | ✅ |
 
 **Legend**: ✅ Implemented | 📋 Planned | ❌ Not Applicable
 

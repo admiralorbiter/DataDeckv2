@@ -152,37 +152,15 @@
           {% endif %}
         </div>
 
-        <!-- Interaction Stats -->
-        <div class="post-stats mb-4">
-          <div class="row text-center">
-            <div class="col">
-              <div class="stat-item">
-                <i class="fas fa-chart-line text-primary mb-1"></i>
-                <div class="stat-number">{{ interaction_info.graph_likes }}</div>
-                <small class="text-muted">Graph Guru</small>
-              </div>
-            </div>
-            <div class="col">
-              <div class="stat-item">
-                <i class="fas fa-eye text-info mb-1"></i>
-                <div class="stat-number">{{ interaction_info.eye_likes }}</div>
-                <small class="text-muted">Expert Engager</small>
-              </div>
-            </div>
-            <div class="col">
-              <div class="stat-item">
-                <i class="fas fa-book-open text-success mb-1"></i>
-                <div class="stat-number">{{ interaction_info.read_likes }}</div>
-                <small class="text-muted">Supreme Storyteller</small>
-              </div>
-            </div>
-            <div class="col">
-              <div class="stat-item">
-                <i class="fas fa-comments text-warning mb-1"></i>
-                <div class="stat-number">{{ interaction_info.total_comments }}</div>
-                <small class="text-muted">Comments</small>
-              </div>
-            </div>
+        <!-- Reaction Badges (Clickable in post detail) -->
+        {% from '_components/reactions.html' import reaction_badges %}
+        {{ reaction_badges(media, interaction_info, is_student_view, true) }}
+
+        <!-- Comment Count -->
+        <div class="comment-count mb-3">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-comments text-warning me-2"></i>
+            <span class="text-muted">{{ interaction_info.total_comments }} Comments</span>
           </div>
         </div>
 

@@ -561,3 +561,84 @@ def _increment_comment_count(student_id, media_id):
             liked_read=False,
         )
         db.session.add(interaction)
+
+
+@bp.route("/media/<int:media_id>/react/<badge_type>", methods=["POST"])
+@student_required
+def react_to_media(media_id, badge_type):
+    """React to media with a badge (single-select behavior)."""
+    # Validate badge type
+    valid_badges = ["graph", "eye", "read"]
+    if badge_type not in valid_badges:
+        return jsonify({"success": False, "error": "Invalid badge type"}), 400
+
+    # Get current student
+    student_id = session.get("student_id")
+    if not student_id:
+        return jsonify({"success": False, "error": "Student not authenticated"}), 401
+
+    # Get media
+    media = Media.query.get_or_404(media_id)
+
+    # Check if student belongs to this session
+    student = Student.query.get(student_id)
+    if not student or student.section_id != media.session_id:
+        return jsonify({"success": False, "error": "Access denied"}), 403
+
+    try:
+        # Get or create interaction record
+        interaction = StudentMediaInteraction.query.filter_by(
+            student_id=student_id, media_id=media_id
+        ).first()
+
+        if not interaction:
+            interaction = StudentMediaInteraction(
+                student_id=student_id,
+                media_id=media_id,
+                liked_graph=False,
+                liked_eye=False,
+                liked_read=False,
+                comment_count=0,
+            )
+            db.session.add(interaction)
+
+        # Single-select logic: deselect all badges first, then select the chosen one
+        interaction.liked_graph = badge_type == "graph"
+        interaction.liked_eye = badge_type == "eye"
+        interaction.liked_read = badge_type == "read"
+
+        # Recalculate counts
+        graph_count = StudentMediaInteraction.query.filter_by(
+            media_id=media_id, liked_graph=True
+        ).count()
+        eye_count = StudentMediaInteraction.query.filter_by(
+            media_id=media_id, liked_eye=True
+        ).count()
+        read_count = StudentMediaInteraction.query.filter_by(
+            media_id=media_id, liked_read=True
+        ).count()
+
+        # Update media counts
+        media.graph_likes = graph_count
+        media.eye_likes = eye_count
+        media.read_likes = read_count
+
+        db.session.commit()
+
+        # Return updated counts and user's current selection
+        return jsonify(
+            {
+                "success": True,
+                "counts": {"graph": graph_count, "eye": eye_count, "read": read_count},
+                "user_like": {
+                    "graph": interaction.liked_graph,
+                    "eye": interaction.liked_eye,
+                    "read": interaction.liked_read,
+                },
+            }
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Reaction error: {e}")
+        return jsonify({"success": False, "error": "Internal server error"}), 500

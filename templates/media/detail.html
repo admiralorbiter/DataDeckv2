@@ -267,54 +267,9 @@
             <div class="row mt-4">
                 <div class="col-12">
                     <div class="dd-card">
-                        <div class="card-body text-center">
-                            <div class="d-flex justify-content-center gap-4">
-                                <!-- Graph Badge -->
-                                <div class="text-center">
-                                    <div class="position-relative d-inline-block">
-                                        <div class="bg-primary text-white rounded-circle p-3 mb-2" style="width: 60px; height: 60px;">
-                                            <i class="fas fa-chart-bar fa-lg"></i>
-                                        </div>
-                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                            {{ media.graph_likes }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <!-- Eye Badge -->
-                                <div class="text-center">
-                                    <div class="position-relative d-inline-block">
-                                        <div class="bg-info text-white rounded-circle p-3 mb-2" style="width: 60px; height: 60px;">
-                                            <i class="fas fa-eye fa-lg"></i>
-                                        </div>
-                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                            {{ media.eye_likes }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <!-- Read Badge -->
-                                <div class="text-center">
-                                    <div class="position-relative d-inline-block">
-                                        <div class="bg-success text-white rounded-circle p-3 mb-2" style="width: 60px; height: 60px;">
-                                            <i class="fas fa-book-open fa-lg"></i>
-                                        </div>
-                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                            {{ media.read_likes }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Badge Explanation -->
-                            <div class="mt-3">
-                                <small class="text-muted">
-                                    <strong>What do these badges mean?</strong><br>
-                                    <i class="fas fa-chart-bar text-primary"></i> Graph •
-                                    <i class="fas fa-eye text-info"></i> Eye •
-                                    <i class="fas fa-book-open text-success"></i> Read
-                                </small>
-                            </div>
+                        <div class="card-body">
+                            {% from '_components/reactions.html' import reaction_badges %}
+                            {{ reaction_badges(media, interaction_info, is_student_view, true) }}
                         </div>
                     </div>
                 </div>

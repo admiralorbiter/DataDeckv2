@@ -33,13 +33,14 @@ Below flows outline request/response steps for critical user operations.
    - Redirect `/session/<id>`
 
 ### 4) React with Badge
-1. Browser: POST `/like-media/<media_id>/<badge_type>` (AJAX with CSRF)
+1. Browser (post/media detail only): POST `/media/<media_id>/react/<badge_type>` (AJAX with CSRF)
 2. Server:
    - Upsert `StudentMediaInteraction` for student+media
-   - Update booleans per behavior (toggle or single-select)
+   - Enforce single-select by setting only the chosen badge to true
    - Recalculate counts; persist on `Media`
    - Return JSON `{success, counts, user_like}`
 3. Browser: Update UI counts and selected state
+4. Session grid: badges render read-only (no click handler)
 
 ### 5) Comment on a Post
 1. Browser: POST `/post/<media_id>` with `text` (and optional `parent_id`)
