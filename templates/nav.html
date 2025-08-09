@@ -18,9 +18,19 @@
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
             </li>
+          {% elif session.get('observer_id') %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('main.observer_dashboard') }}">Observer</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('observer_auth.observer_logout') }}">Observer Logout</a>
+            </li>
           {% else %}
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('observer_auth.observer_login') }}">Observer Login</a>
             </li>
           {% endif %}
         </ul>

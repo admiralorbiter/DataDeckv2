@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}School — {{ school.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-12">
+      <a href="{{ url_for('main.observer_dashboard') }}" class="btn btn-link p-0 mb-3">← Back to Observer Dashboard</a>
+
+      <h1 class="mb-1">{{ school.name }}</h1>
+      {% if school.code %}
+        <p class="text-muted">Code: {{ school.code }}</p>
+      {% endif %}
+
+      <div class="card mt-3">
+        <div class="card-header">Teachers</div>
+        <ul class="list-group list-group-flush">
+          {% if teachers %}
+            {% for t in teachers %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>{{ t.first_name }} {{ t.last_name }}</strong>
+                  <div class="text-muted small">{{ t.email }}</div>
+                </div>
+              </li>
+            {% endfor %}
+          {% else %}
+            <li class="list-group-item">No teachers found for this school.</li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

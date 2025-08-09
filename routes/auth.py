@@ -15,10 +15,17 @@ bp = create_blueprint("auth")
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
+        # Primary: treat form value as email; Fallback: username for backwards comp
+        value = form.username.data
+        user = User.query.filter_by(email=value).first()
+        if not user:
+            user = User.query.filter_by(username=value).first()
         if user and check_password_hash(user.password_hash, form.password.data):
             login_user(user)
             flash("Logged in successfully.", "success")
+            # Redirect by role: admins/staff to admin dashboard; others to home
+            if user.is_admin() or user.is_staff():
+                return redirect(url_for("admin.admin_dashboard"))
             return redirect(url_for("main.index"))
         else:
             flash("Invalid username or password.", "danger")

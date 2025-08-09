@@ -28,11 +28,11 @@ Acceptance: `flask run` boots; `pytest` green on a clean DB; pre-commit enforced
 Acceptance: Schema creates successfully via `db.create_all()`; seed creates demo teacher+session+students; factories generate valid objects.
 
 #### M2 — Authentication & Roles
-- [ ] Teacher/Admin login/logout with Flask-Login
-- [ ] Observer login/logout (separate session namespace)
-- [ ] Decorators: `@observer_required`, `@student_required` (session-based)
-- [ ] Password change (admin/staff/teacher)
-- [ ] Role-based navbar and access checks
+- [x] Teacher/Admin login/logout with Flask-Login
+- [x] Observer login/logout (separate session namespace)
+- [x] Decorators: `@observer_required`, `@student_required` (session-based)
+- [x] Password change (admin/staff/teacher)
+- [x] Role-based navbar and access checks
 
 Acceptance: Valid credentials redirect to dashboards; protected routes gated by role; password change persists.
 
