@@ -1,0 +1,134 @@
+{% macro data_table(headers, rows, table_id='', classes='table table-hover') -%}
+  <div class="table-responsive">
+    <table class="{{ classes }}" {% if table_id %}id="{{ table_id }}"{% endif %}>
+      <thead class="table-light">
+        <tr>
+          {% for header in headers %}
+            <th scope="col">{{ header }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            {% for cell in row %}
+              <td>{{ cell|safe }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{%- endmacro %}
+
+{% macro student_table(students, show_actions=true) -%}
+  <div class="table-responsive">
+    <table class="table table-hover" id="studentTable">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">
+            <div class="d-flex align-items-center">
+              <input type="checkbox" id="selectAllStudents" class="form-check-input me-2">
+              Student
+            </div>
+          </th>
+          <th scope="col">Username</th>
+          <th scope="col">Character Theme</th>
+          {% if show_actions %}
+            <th scope="col" width="120">Actions</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for student in students %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center">
+                {% if show_actions %}
+                  <input type="checkbox" class="form-check-input me-3 student-checkbox"
+                         value="{{ student.id }}" data-student-name="{{ student.character_name }}">
+                {% endif %}
+
+                <div class="d-flex align-items-center">
+                  {% if student.avatar_path %}
+                    <img src="{{ student.avatar_path }}" alt="{{ student.character_name }}"
+                         class="rounded-circle me-2" width="32" height="32">
+                  {% else %}
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                         style="width: 32px; height: 32px; font-size: 0.8rem;">
+                      <i class="fas fa-user"></i>
+                    </div>
+                  {% endif %}
+
+                  <div>
+                    <div class="fw-medium">{{ student.character_name }}</div>
+                    <small class="text-muted">ID: {{ student.id }}</small>
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <code class="text-muted">{{ student.username }}</code>
+            </td>
+
+            <td>
+              {% set theme = student.character_name.lower() %}
+              {% if 'bear' in theme or 'wolf' in theme or 'eagle' in theme or 'lion' in theme or 'tiger' in theme %}
+                <span class="badge bg-success">Animals</span>
+              {% elif 'captain' in theme or 'super' in theme or 'hero' in theme or 'guardian' in theme %}
+                <span class="badge bg-primary">Superheroes</span>
+              {% elif 'elf' in theme or 'wizard' in theme or 'knight' in theme or 'mage' in theme %}
+                <span class="badge bg-warning">Fantasy</span>
+              {% elif 'star' in theme or 'nova' in theme or 'comet' in theme or 'galaxy' in theme %}
+                <span class="badge bg-info">Space</span>
+              {% else %}
+                <span class="badge bg-secondary">Other</span>
+              {% endif %}
+            </td>
+
+            {% if show_actions %}
+              <td>
+                <div class="btn-group btn-group-sm" role="group">
+                  <button type="button" class="btn btn-outline-primary"
+                          onclick="resetStudentPin({{ student.id }}, '{{ student.character_name }}')"
+                          title="Reset PIN">
+                    <i class="fas fa-key"></i>
+                  </button>
+                  <button type="button" class="btn btn-outline-danger"
+                          onclick="confirmDeleteStudent({{ student.id }}, '{{ student.character_name }}')"
+                          title="Delete Student">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            {% endif %}
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="{% if show_actions %}4{% else %}3{% endif %}" class="text-center text-muted py-4">
+              <i class="fas fa-users fa-2x mb-2 d-block"></i>
+              No students found
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if students and show_actions %}
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <div>
+        <button type="button" class="btn btn-sm btn-outline-danger" id="deleteSelectedStudents" disabled>
+          <i class="fas fa-trash me-2"></i>Delete Selected (<span id="selectedCount">0</span>)
+        </button>
+      </div>
+
+      <div>
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="generatePinCards()">
+          <i class="fas fa-print me-2"></i>Generate PIN Cards
+        </button>
+      </div>
+    </div>
+  {% endif %}
+{%- endmacro %}

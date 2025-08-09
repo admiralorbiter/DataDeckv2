@@ -1,0 +1,78 @@
+{% macro confirmation_modal(modal_id, title, body, confirm_text='Confirm', cancel_text='Cancel', confirm_class='btn-danger') -%}
+  <div class="modal fade" id="{{ modal_id }}" tabindex="-1" aria-labelledby="{{ modal_id }}Label" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="{{ modal_id }}Label">{{ title }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          {{ body|safe }}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ cancel_text }}</button>
+          <button type="button" class="btn {{ confirm_class }}" id="{{ modal_id }}Confirm">{{ confirm_text }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{%- endmacro %}
+
+{% macro delete_student_modal() -%}
+  <div class="modal fade" id="deleteStudentModal" tabindex="-1" aria-labelledby="deleteStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteStudentModalLabel">
+            <i class="fas fa-exclamation-triangle text-warning me-2"></i>Delete Student
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete <strong id="deleteStudentName"></strong>?</p>
+          <div class="alert alert-warning">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>This action cannot be undone.</strong> All student data, including their media uploads and reactions, will be permanently removed.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteStudent">
+            <i class="fas fa-trash me-2"></i>Delete Student
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{%- endmacro %}
+
+{% macro pin_reset_modal() -%}
+  <div class="modal fade" id="pinResetModal" tabindex="-1" aria-labelledby="pinResetModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="pinResetModalLabel">
+            <i class="fas fa-key text-primary me-2"></i>PIN Reset Successful
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="text-center">
+            <p>New PIN for <strong id="pinResetStudentName"></strong>:</p>
+            <div class="display-4 font-monospace text-primary mb-3" id="newPinDisplay">----</div>
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              Make sure to share this PIN with the student. You can also generate new PIN cards with all current PINs.
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" onclick="generatePinCards()">
+            <i class="fas fa-print me-2"></i>Generate PIN Cards
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{%- endmacro %}

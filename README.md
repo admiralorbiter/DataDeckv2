@@ -2,7 +2,7 @@
 
 DataDeck v2 is a Flask rewrite of the original Django-based DataDeck classroom app. It enables teachers to run classroom sessions where students upload data visualizations (images), react with badges, and comment. District-level observers can browse activity across teachers in their district.
 
-This repository currently contains a runnable Flask outline (starter) plus planning docs for the full rewrite and migration.
+This repository contains a comprehensive Flask rewrite with M0-M3.5 complete and full M4 preparation. All core infrastructure, authentication, session management, and UI foundation are implemented and tested.
 
 ## Key Features (target)
 - Sessions lifecycle (create, list, pause, archive/unarchive, delete)
@@ -13,6 +13,18 @@ This repository currently contains a runnable Flask outline (starter) plus plann
 - Admin dashboard (districts, observers, teacher management)
 
 See `docs/features.md` and `docs/FLASK_REWRITE_PLAN.md` for full scope.
+
+## 🚀 Implementation Status
+
+- ✅ **M0**: Bootstrap & Tooling - App factory, CSRF, pre-commit hooks
+- ✅ **M1**: Data Model & Seed - All models, relationships, seed scripts
+- ✅ **M2**: Authentication & Roles - Unified login, role-based access, password management
+- ✅ **M3**: Sessions Module - Full session lifecycle, conflict resolution, student generation
+- ✅ **M3.5**: UI/Branding - WCAG AA compliant design system, component library
+- ✅ **Technical Debt**: Service layer, error handlers, UI components for M4
+- 🚀 **M4**: Students Module - **READY TO START** (all foundation complete)
+
+**Next**: Student list management, PIN operations, PDF card generation. See `docs/M4_PREPARATION.md` for complete implementation guide.
 
 ## Accounts
 

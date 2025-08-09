@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - DataDeck{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="dd-card text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-search fa-4x text-muted"></i>
+                </div>
+
+                <h1 class="display-4 mb-3">404</h1>
+                <h2 class="h3 mb-4">Page Not Found</h2>
+
+                <p class="lead mb-4">
+                    Sorry, the page you're looking for doesn't exist or has been moved.
+                </p>
+
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="javascript:history.back()" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Go Back
+                    </a>
+
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.is_teacher() or current_user.is_admin() or current_user.is_staff() %}
+                            <a href="{{ url_for('sessions.list_sessions') }}" class="btn btn-primary">
+                                <i class="fas fa-chalkboard-teacher me-2"></i>My Sessions
+                            </a>
+                        {% elif current_user.is_observer() %}
+                            <a href="{{ url_for('main.observer_dashboard') }}" class="btn btn-primary">
+                                <i class="fas fa-eye me-2"></i>Dashboard
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                            <i class="fas fa-home me-2"></i>Home
+                        </a>
+                    {% endif %}
+                </div>
+
+                {% if current_user.is_authenticated %}
+                <div class="mt-4">
+                    <small class="text-muted">
+                        Logged in as {{ current_user.username }} ({{ current_user.role.value }})
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

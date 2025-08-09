@@ -1,14 +1,66 @@
 {% extends "base.html" %}
 
-{% block title %}Access Denied{% endblock %}
+{% block title %}Access Denied - DataDeck{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="alert alert-danger">
-        <h4 class="alert-heading">Access Denied</h4>
-        <p>You don't have permission to access this page.</p>
-        <hr>
-        <p class="mb-0">Please contact an administrator if you believe this is an error.</p>
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="dd-card text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-lock fa-4x text-warning"></i>
+                </div>
+
+                <h1 class="display-4 mb-3">403</h1>
+                <h2 class="h3 mb-4">Access Denied</h2>
+
+                <p class="lead mb-4">
+                    You don't have permission to access this resource.
+                </p>
+
+                {% if current_user.is_authenticated %}
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    You are logged in as <strong>{{ current_user.username }}</strong>
+                    with <strong>{{ current_user.role.value }}</strong> permissions.
+
+                    {% if current_user.is_student() %}
+                        <br><small class="mt-2 d-block">Students can only access sessions they're enrolled in.</small>
+                    {% elif current_user.is_teacher() %}
+                        <br><small class="mt-2 d-block">Teachers can only access their own sessions and students.</small>
+                    {% elif current_user.is_observer() %}
+                        <br><small class="mt-2 d-block">Observers can only view sessions in their assigned district.</small>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="javascript:history.back()" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Go Back
+                    </a>
+
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.is_teacher() or current_user.is_admin() or current_user.is_staff() %}
+                            <a href="{{ url_for('sessions.list_sessions') }}" class="btn btn-primary">
+                                <i class="fas fa-chalkboard-teacher me-2"></i>My Sessions
+                            </a>
+                        {% elif current_user.is_observer() %}
+                            <a href="{{ url_for('main.observer_dashboard') }}" class="btn btn-primary">
+                                <i class="fas fa-eye me-2"></i>Dashboard
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                                <i class="fas fa-home me-2"></i>Home
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

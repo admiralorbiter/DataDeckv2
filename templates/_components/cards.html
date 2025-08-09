@@ -11,3 +11,49 @@
     <div class="text-muted">{{ label }}</div>
   </div>
 {%- endmacro %}
+
+{% macro student_card(student, show_actions=true) -%}
+  <div class="dd-card p-3 mb-3">
+    <div class="d-flex align-items-center">
+      <div class="me-3">
+        {% if student.avatar_path %}
+          <img src="{{ student.avatar_path }}" alt="{{ student.character_name }}"
+               class="rounded-circle" width="48" height="48">
+        {% else %}
+          <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+               style="width: 48px; height: 48px;">
+            <i class="fas fa-user"></i>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="flex-grow-1">
+        <h6 class="mb-1">{{ student.character_name }}</h6>
+        <small class="text-muted">{{ student.username }}</small>
+      </div>
+
+      {% if show_actions %}
+        <div class="dropdown">
+          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-ellipsis-v"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item" href="#" onclick="resetStudentPin({{ student.id }})">
+                <i class="fas fa-key me-2"></i>Reset PIN
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item text-danger" href="#"
+                 onclick="confirmDeleteStudent({{ student.id }}, '{{ student.character_name }}')">
+                <i class="fas fa-trash me-2"></i>Delete Student
+              </a>
+            </li>
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{%- endmacro %}

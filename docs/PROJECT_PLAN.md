@@ -92,10 +92,17 @@ Acceptance: ✅ **COMPLETE** - All core session management features implemented:
 
 **Deferred to Future**: Sessions list pagination (depends on M3 backend paging implementation).
 
-#### M4 — Students
-- [ ] Student list (per teacher)
-- [ ] Delete with ownership checks
-- [ ] Export printable PIN cards (PDF)
+#### M4 — Students 🚀 **READY TO START**
+- [ ] Student list (per teacher) - **Service layer ready** ✅
+- [ ] Delete with ownership checks - **Service layer ready** ✅
+- [ ] Export printable PIN cards (PDF) - **Data structure ready** ✅
+
+**Foundation Complete:**
+- ✅ `StudentService` class with all business logic methods
+- ✅ UI components (`student_card`, `student_table`, modals)
+- ✅ Error handlers for 403/404 ownership violations
+- ✅ JavaScript for interactive features (PIN reset, bulk delete)
+- ✅ Technical debt resolved (model debugging, legacy cleanup)
 
 Acceptance: CRUD works; PDF opens with correct layout.
 
@@ -168,6 +175,17 @@ Acceptance: Staging migration passes verification; cutover window executed safel
 
 ### Execution Order (high level)
 M0 → M1 → M2 → M3 → M3.5 → M4 → M5 → M6 → M7 → M8 → M9 → M10 → M11 → M12 → M13. Parallelize where safe (tests/CI can start early).
+
+### Technical Debt Completion (Pre-M4)
+**Status**: ✅ **COMPLETE** - All high-impact technical debt resolved
+
+- [x] **Model debugging improvements**: Added `__repr__` methods to User, Student models
+- [x] **Legacy code cleanup**: Removed `routes/observer_auth.py`, cleaned imports
+- [x] **Data model cleanup**: Removed unused `Media.submitted_password` field
+- [x] **Service documentation**: Enhanced `SessionService` with comprehensive docstrings
+- [x] **StudentService creation**: Complete service layer with 6 methods for M4 operations
+- [x] **Error handlers**: Added 403/404/500 handlers with role-aware templates
+- [x] **UI component library**: Extended with student cards, tables, modals, JavaScript
 
 ### Weekly Next Actions (updated post-M3)
 - [x] Convert to app factory (`create_app`) and relocate config loading

@@ -1,7 +1,47 @@
-{% macro primary(text, type='submit', classes='') -%}
-  <button type="{{ type }}" class="btn dd-btn-primary {{ classes }}">{{ text }}</button>
+{% macro primary(text, type='submit', classes='', icon='') -%}
+  <button type="{{ type }}" class="btn dd-btn-primary {{ classes }}">
+    {% if icon %}<i class="{{ icon }} me-2"></i>{% endif %}{{ text }}
+  </button>
 {%- endmacro %}
 
-{% macro link(text, href='#', classes='') -%}
-  <a href="{{ href }}" class="btn btn-link {{ classes }}">{{ text }}</a>
+{% macro secondary(text, type='button', classes='', icon='') -%}
+  <button type="{{ type }}" class="btn btn-outline-primary {{ classes }}">
+    {% if icon %}<i class="{{ icon }} me-2"></i>{% endif %}{{ text }}
+  </button>
+{%- endmacro %}
+
+{% macro danger(text, type='button', classes='', icon='') -%}
+  <button type="{{ type }}" class="btn btn-danger {{ classes }}">
+    {% if icon %}<i class="{{ icon }} me-2"></i>{% endif %}{{ text }}
+  </button>
+{%- endmacro %}
+
+{% macro link(text, href='#', classes='', icon='') -%}
+  <a href="{{ href }}" class="btn btn-link {{ classes }}">
+    {% if icon %}<i class="{{ icon }} me-2"></i>{% endif %}{{ text }}
+  </a>
+{%- endmacro %}
+
+{% macro action_dropdown(button_text, actions, button_class='btn-outline-secondary', icon='fas fa-ellipsis-v') -%}
+  <div class="dropdown">
+    <button class="btn {{ button_class }} dropdown-toggle" type="button"
+            data-bs-toggle="dropdown" aria-expanded="false">
+      {% if icon %}<i class="{{ icon }}"></i>{% else %}{{ button_text }}{% endif %}
+    </button>
+    <ul class="dropdown-menu">
+      {% for action in actions %}
+        {% if action.divider %}
+          <li><hr class="dropdown-divider"></li>
+        {% else %}
+          <li>
+            <a class="dropdown-item {{ action.class|default('') }}"
+               href="{{ action.href|default('#') }}"
+               {% if action.onclick %}onclick="{{ action.onclick }}"{% endif %}>
+              {% if action.icon %}<i class="{{ action.icon }} me-2"></i>{% endif %}{{ action.text }}
+            </a>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </div>
 {%- endmacro %}
