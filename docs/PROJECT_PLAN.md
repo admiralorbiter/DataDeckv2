@@ -182,11 +182,18 @@ Acceptance: ✅ **COMPLETE** - All core session management features implemented:
 Acceptance: Analytics render without page errors; resets update denormalized counts and UI on refresh; permissions enforced (teacher owner/admin/staff only).
 
 #### M8 — Admin & Observer Dashboards
-- [ ] Admin: District CRUD + toggle; Observer management (create/deactivate/password)
-- [ ] Teacher district assignment/update
-- [ ] Observer dashboard: district overview (teachers, sessions, recent media)
+- [x] Admin: District CRUD + toggle; Observer management (create/deactivate/password)
+- [x] Teacher district assignment/update
+- [x] Observer dashboard: district overview (teachers, sessions, recent media)
 
-Acceptance: Admin operations succeed with flash messages; observer sees only their district.
+Status (complete):
+- ✅ District CRUD implemented in admin dashboard (create, edit, delete with safety checks)
+- ✅ School CRUD implemented in admin dashboard (create, edit, delete with safety checks)
+- ✅ Observer management controls (deactivate/reactivate, reset password, assign district)
+- ✅ Teacher reassignment tools (inline update of school/district) with dependent school dropdown
+- ✅ Observer dashboard stats and drill-down (teachers, sessions, recent media)
+
+Acceptance: Admin operations succeed with flash messages; observer sees only their district; observer dashboard shows district-wide stats and links to teacher drill-down views.
 
 #### M9 — Storage & Static
 - [ ] Storage abstraction (local dev, S3-compatible prod)

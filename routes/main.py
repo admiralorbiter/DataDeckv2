@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from werkzeug.security import check_password_hash
 
 from forms import StudentLoginForm
-from models import User, db
+from models import Media, Session, User, db
 from models.district import District
 from models.school import School
 from models.student import Student
@@ -86,6 +86,11 @@ def observer_dashboard():
 
     district = None
     schools = []
+    stats = {
+        "teachers": 0,
+        "sessions": 0,
+        "recent_media": [],
+    }
     if observer.district_id:
         district = db.session.get(District, observer.district_id)
         if district:
@@ -95,11 +100,72 @@ def observer_dashboard():
                 .all()
             )
 
+            # Stats: teachers in district
+            teachers_q = User.query.filter(
+                User.role == User.Role.TEACHER, User.district_id == district.id
+            )
+            stats["teachers"] = teachers_q.count()
+
+            # Sessions created by those teachers
+            teacher_ids = [t.id for t in teachers_q]
+            if teacher_ids:
+                stats["sessions"] = Session.query.filter(
+                    Session.created_by_id.in_(teacher_ids)
+                ).count()
+                # Recent media across the district (limit 12)
+                stats["recent_media"] = (
+                    Media.query.join(Session, Media.session_id == Session.id)
+                    .filter(Session.created_by_id.in_(teacher_ids))
+                    .order_by(Media.uploaded_at.desc())
+                    .limit(12)
+                    .all()
+                )
+
     return render_template(
         "observer/dashboard.html",
         observer=observer,
         district=district,
         schools=schools,
+        stats=stats,
+    )
+
+
+@bp.route("/observer/teachers/<int:teacher_id>")
+@login_required
+def observer_teacher(teacher_id: int):
+    # Check if current user is an observer
+    if not current_user.is_observer():
+        flash("Access denied. Observer role required.", "danger")
+        return redirect(url_for("main.index"))
+
+    teacher = db.session.get(User, teacher_id)
+    if not teacher or not teacher.is_teacher():
+        return render_template("errors/404.html"), 404
+
+    # Scope: teacher must belong to observer's district
+    if not current_user.district_id or teacher.district_id != current_user.district_id:
+        return render_template("errors/403.html"), 403
+
+    # Sessions and basic stats
+    sessions = (
+        Session.query.filter_by(created_by_id=teacher.id)
+        .order_by(Session.created_at.desc())
+        .all()
+    )
+    # Recent media for teacher
+    recent_media = (
+        Media.query.join(Session, Media.session_id == Session.id)
+        .filter(Session.created_by_id == teacher.id)
+        .order_by(Media.uploaded_at.desc())
+        .limit(12)
+        .all()
+    )
+
+    return render_template(
+        "observer/teacher_detail.html",
+        teacher=teacher,
+        sessions=sessions,
+        recent_media=recent_media,
     )
 
 
@@ -132,12 +198,28 @@ def observer_school(school_id: int):
         .all()
     )
 
+    # Build simple stats per teacher
+    teacher_stats = {}
+    for t in teachers:
+        sessions = Session.query.filter_by(created_by_id=t.id)
+        sessions_count = sessions.count()
+        recent_media_count = (
+            Media.query.join(Session, Media.session_id == Session.id)
+            .filter(Session.created_by_id == t.id)
+            .count()
+        )
+        teacher_stats[t.id] = {
+            "sessions": sessions_count,
+            "recent_media": recent_media_count,
+        }
+
     return render_template(
         "observer/school_detail.html",
         observer=observer,
         district_id=observer.district_id,
         school=school,
         teachers=teachers,
+        teacher_stats=teacher_stats,
     )
 
 

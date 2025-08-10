@@ -66,26 +66,90 @@
 
   <div class="dd-card p-3">
     <h3 class="mb-3">User List</h3>
+    <!-- Client-side filters -->
+    <div class="row g-2 mb-3 align-items-end">
+      <div class="col-md-3">
+        <select id="filterRole" class="form-select form-select-sm">
+          <option value="">All Roles</option>
+          {% for role in roles %}
+          <option value="{{ role.value }}">{{ role.value|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <select id="filterDistrict" class="form-select form-select-sm">
+          <option value="">All Districts</option>
+          {% for d in districts %}
+          <option value="{{ d.id }}">{{ d.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <select id="filterSchool" class="form-select form-select-sm">
+          <option value="">All Schools</option>
+          {% for s in schools %}
+          <option value="{{ s.id }}" data-district-id="{{ s.district_id }}">{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-1 text-end">
+        <button id="clearUserFilters" class="btn btn-outline-secondary btn-sm w-100">Clear</button>
+      </div>
+    </div>
     <div class="table-responsive">
       <table class="table dd-table">
         <thead>
           <tr>
-            <th>Username</th><th>Email</th><th>Name</th><th>Role</th><th>Created</th><th>Actions</th>
+            <th>Username</th><th>Email</th><th>Name</th><th>Role</th><th>District</th><th>School</th><th>Created</th><th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for user in users %}
-          <tr>
+          <tr data-role="{{ user.role.value }}" data-district-id="{{ user.district_id or '' }}" data-school-id="{{ user.school_id or '' }}">
             <td>{{ user.username }}</td>
             <td>{{ user.email }}</td>
             <td>{{ user.first_name }} {{ user.last_name }}</td>
             <td><span class="dd-badge">{{ user.role.value }}</span></td>
+            <td>
+              {% if user.is_teacher() %}
+              <select class="form-select form-select-sm teacher-district" data-user-id="{{ user.id }}">
+                <option value="">Select</option>
+                {% for d in districts %}
+                <option value="{{ d.id }}" {% if user.district_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+                {% endfor %}
+              </select>
+              {% else %}
+              {{ user.district.name if user.district else '-' }}
+              {% endif %}
+            </td>
+            <td>
+              {% if user.is_teacher() %}
+              <select class="form-select form-select-sm teacher-school" data-user-id="{{ user.id }}">
+                <option value="">Select</option>
+                {% for s in schools %}
+                <option value="{{ s.id }}" data-district-id="{{ s.district_id }}" {% if user.school_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+                {% endfor %}
+              </select>
+              {% else %}
+              {{ user.school.name if user.school else '-' }}
+              {% endif %}
+            </td>
             <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
             <td>
               <div class="btn-group btn-group-sm">
                 <button class="btn btn-outline-primary edit-user" data-user-id="{{ user.id }}">Edit</button>
                 {% if current_user.is_admin() %}
                 <button class="btn btn-outline-danger delete-user" data-user-id="{{ user.id }}">Delete</button>
+                {% endif %}
+                {% if user.is_observer() %}
+                <form method="POST" action="{{ url_for('admin.toggle_observer', user_id=user.id) }}" class="d-inline">
+                  <button type="submit" class="btn btn-outline-secondary">{{ 'Deactivate' if user.is_active else 'Activate' }}</button>
+                </form>
+                <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#resetObserverPassModal" data-user-id="{{ user.id }}">Reset Password</button>
+                <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#assignObserverDistrictModal" data-user-id="{{ user.id }}">Assign District</button>
+                {% endif %}
+                {% if user.is_teacher() %}
+                <button class="btn btn-outline-success save-teacher-assignment" data-user-id="{{ user.id }}">Save</button>
                 {% endif %}
               </div>
             </td>
@@ -98,6 +162,222 @@
 
   {{ flash_messages() }}
 </div>
+
+<!-- District Management Panel -->
+<div class="container mt-4">
+  <div class="dd-card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3 class="mb-0">Districts</h3>
+      <form class="d-flex gap-2" method="POST" action="{{ url_for('admin.create_district') }}">
+        <input class="form-control form-control-sm" type="text" name="name" placeholder="District name" required>
+        <input class="form-control form-control-sm" type="text" name="code" placeholder="Code (optional)">
+        <button class="btn btn-sm btn-primary" type="submit">Add District</button>
+      </form>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle dd-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Schools</th>
+            <th>Users</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in districts %}
+          <tr>
+            <td>{{ d.name }}</td>
+            <td>{{ d.code or '-' }}</td>
+            <td>{{ d.schools.count() }}</td>
+            <td>{{ d.users.count() }}</td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editDistrictModal" data-district-id="{{ d.id }}">Edit</button>
+                {% if current_user.is_admin() %}
+                <button class="btn btn-outline-danger delete-district" data-district-id="{{ d.id }}">Delete</button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Observer Password Modal -->
+<div class="modal fade" id="resetObserverPassModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Reset Observer Password</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="resetObserverPassForm">
+        <div class="modal-body">
+          <input type="hidden" id="resetObserverId">
+          <div class="mb-3">
+            <label class="form-label">New Password</label>
+            <input type="password" class="form-control" name="new_password" id="resetObserverPassword" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Reset</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Observer District Modal -->
+<div class="modal fade" id="assignObserverDistrictModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Assign Observer District</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="assignObserverDistrictForm">
+        <div class="modal-body">
+          <input type="hidden" id="assignObserverId">
+          <div class="mb-3">
+            <label class="form-label">District</label>
+            <select class="form-select" name="district_id" id="assignObserverDistrict" required>
+              <option value="">Select District</option>
+              {% for d in districts %}
+              <option value="{{ d.id }}">{{ d.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Assign</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- School Management Panel -->
+<div class="container mt-4">
+  <div class="dd-card p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3 class="mb-0">Schools</h3>
+      <form class="d-flex gap-2" method="POST" action="{{ url_for('admin.create_school') }}">
+        <input class="form-control form-control-sm" type="text" name="name" placeholder="School name" required>
+        <input class="form-control form-control-sm" type="text" name="code" placeholder="Code (optional)">
+        <select class="form-select form-select-sm" name="district_id" required>
+          <option value="">Select District</option>
+          {% for d in districts %}
+          <option value="{{ d.id }}">{{ d.name }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-primary" type="submit">Add School</button>
+      </form>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle dd-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Code</th>
+            <th>District</th>
+            <th>Users</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in schools %}
+          <tr>
+            <td>{{ s.name }}</td>
+            <td>{{ s.code or '-' }}</td>
+            <td>{{ s.district.name }}</td>
+            <td>{{ s.users.count() }}</td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editSchoolModal" data-school-id="{{ s.id }}">Edit</button>
+                {% if current_user.is_admin() %}
+                <button class="btn btn-outline-danger delete-school" data-school-id="{{ s.id }}">Delete</button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Edit School Modal -->
+<div class="modal fade" id="editSchoolModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit School</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="editSchoolForm">
+        <div class="modal-body">
+          <input type="hidden" id="editSchoolId">
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" class="form-control" id="editSchoolName" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Code</label>
+            <input type="text" class="form-control" id="editSchoolCode" name="code">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">District</label>
+            <select class="form-select" id="editSchoolDistrict" name="district_id" required>
+              <option value="">Select District</option>
+              {% for d in districts %}
+              <option value="{{ d.id }}">{{ d.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Edit District Modal -->
+<div class="modal fade" id="editDistrictModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit District</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="editDistrictForm">
+        <div class="modal-body">
+          <input type="hidden" id="editDistrictId">
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" class="form-control" id="editDistrictName" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Code</label>
+            <input type="text" class="form-control" id="editDistrictCode" name="code">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  </div>
 
 <!-- Edit User Modal -->
 <div class="modal fade" id="editUserModal" tabindex="-1">
@@ -284,6 +564,203 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Teacher assignment save
+    document.querySelectorAll('.save-teacher-assignment').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            const districtSel = document.querySelector(`.teacher-district[data-user-id="${userId}"]`);
+            const schoolSel = document.querySelector(`.teacher-school[data-user-id="${userId}"]`);
+            const formData = new FormData();
+            formData.append('district_id', districtSel ? districtSel.value : '');
+            formData.append('school_id', schoolSel ? schoolSel.value : '');
+
+            fetch(`/admin/teachers/${userId}/assign`, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Failed to save teacher assignment');
+                }
+            })
+            .catch(() => alert('Failed to save teacher assignment'));
+        });
+    });
+
+    // Client-side filters for users
+    const filterRole = document.getElementById('filterRole');
+    const filterDistrict = document.getElementById('filterDistrict');
+    const filterSchool = document.getElementById('filterSchool');
+    const clearBtn = document.getElementById('clearUserFilters');
+    const userRows = Array.from(document.querySelectorAll('table.dd-table tbody tr'));
+
+    // Read filters from URL on load
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('role')) filterRole.value = urlParams.get('role');
+    if (urlParams.has('district')) filterDistrict.value = urlParams.get('district');
+    if (urlParams.has('school')) filterSchool.value = urlParams.get('school');
+
+    function applyUserFilters(pushState=true) {
+        const roleVal = filterRole.value || '';
+        const districtVal = filterDistrict.value || '';
+        const schoolVal = filterSchool.value || '';
+        userRows.forEach(row => {
+            const r = row.getAttribute('data-role') || '';
+            const d = row.getAttribute('data-district-id') || '';
+            const s = row.getAttribute('data-school-id') || '';
+            const roleOk = !roleVal || r === roleVal;
+            const districtOk = !districtVal || d === districtVal;
+            const schoolOk = !schoolVal || s === schoolVal;
+            row.style.display = roleOk && districtOk && schoolOk ? '' : 'none';
+        });
+        // Persist filters in URL
+        if (pushState) {
+            const params = new URLSearchParams(window.location.search);
+            if (roleVal) params.set('role', roleVal); else params.delete('role');
+            if (districtVal) params.set('district', districtVal); else params.delete('district');
+            if (schoolVal) params.set('school', schoolVal); else params.delete('school');
+            const newUrl = `${window.location.pathname}?${params.toString()}`;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }
+
+    [filterRole, filterDistrict, filterSchool].forEach(el => el && el.addEventListener('change', () => applyUserFilters(true)));
+
+    // Clear filters
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            filterRole.value = '';
+            filterDistrict.value = '';
+            filterSchool.value = '';
+            applyUserFilters(true);
+        });
+    }
+
+    // Dependent school dropdown (filter by selected district) for teacher inline selects
+    document.querySelectorAll('.teacher-district').forEach(sel => {
+        sel.addEventListener('change', function() {
+            const userId = this.getAttribute('data-user-id');
+            const districtId = this.value;
+            const schoolSel = document.querySelector(`.teacher-school[data-user-id="${userId}"]`);
+            if (!schoolSel) return;
+            Array.from(schoolSel.options).forEach(opt => {
+                if (opt.value === '') return; // Skip placeholder
+                const optDistrict = opt.getAttribute('data-district-id');
+                opt.hidden = !!(districtId && optDistrict !== districtId);
+                if (opt.hidden && opt.selected) {
+                    opt.selected = false;
+                    schoolSel.value = '';
+                }
+            });
+        });
+    });
+
+    // Apply filters on initial load after reading URL
+    applyUserFilters(false);
+});
+</script>
+<script>
+// Districts: wire Edit modal and Delete actions
+document.addEventListener('DOMContentLoaded', function() {
+  const editModalEl = document.getElementById('editDistrictModal');
+  if (editModalEl) {
+    editModalEl.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      const id = button.getAttribute('data-district-id');
+      fetch(`/admin/districts/${id}`)
+        .then(resp => resp.json())
+        .then(data => {
+          document.getElementById('editDistrictId').value = data.id;
+          document.getElementById('editDistrictName').value = data.name || '';
+          document.getElementById('editDistrictCode').value = data.code || '';
+          const form = document.getElementById('editDistrictForm');
+          form.action = `/admin/districts/${data.id}/edit`;
+        });
+    });
+  }
+
+  document.querySelectorAll('.delete-district').forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (!confirm('Delete this district? This action cannot be undone.')) return;
+      const id = this.getAttribute('data-district-id');
+      fetch(`/admin/districts/${id}/delete`, { method: 'POST' })
+        .then(resp => resp.json())
+        .then(data => {
+          if (data.success) {
+            window.location.reload();
+          } else {
+            alert(data.message || 'Error deleting district');
+          }
+        })
+        .catch(() => alert('Error deleting district'));
+    });
+  });
+});
+</script>
+<script>
+// Schools: wire Edit modal and Delete actions
+document.addEventListener('DOMContentLoaded', function() {
+  const editSchoolModalEl = document.getElementById('editSchoolModal');
+  if (editSchoolModalEl) {
+    editSchoolModalEl.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      const id = button.getAttribute('data-school-id');
+      fetch(`/admin/schools/${id}`)
+        .then(resp => resp.json())
+        .then(data => {
+          document.getElementById('editSchoolId').value = data.id;
+          document.getElementById('editSchoolName').value = data.name || '';
+          document.getElementById('editSchoolCode').value = data.code || '';
+          document.getElementById('editSchoolDistrict').value = data.district_id || '';
+          const form = document.getElementById('editSchoolForm');
+          form.action = `/admin/schools/${data.id}/edit`;
+        });
+    });
+  }
+
+  document.querySelectorAll('.delete-school').forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (!confirm('Delete this school? This action cannot be undone.')) return;
+      const id = this.getAttribute('data-school-id');
+      fetch(`/admin/schools/${id}/delete`, { method: 'POST' })
+        .then(resp => resp.json())
+        .then(data => {
+          if (data.success) {
+            window.location.reload();
+          } else {
+            alert(data.message || 'Error deleting school');
+          }
+        })
+        .catch(() => alert('Error deleting school'));
+    });
+  });
+});
+</script>
+<script>
+// Observer management: reset password & assign district
+document.addEventListener('DOMContentLoaded', function() {
+  const resetModalEl = document.getElementById('resetObserverPassModal');
+  if (resetModalEl) {
+    resetModalEl.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      const id = button.getAttribute('data-user-id');
+      document.getElementById('resetObserverId').value = id;
+      const form = document.getElementById('resetObserverPassForm');
+      form.action = `/admin/observers/${id}/reset-password`;
+    });
+  }
+
+  const assignModalEl = document.getElementById('assignObserverDistrictModal');
+  if (assignModalEl) {
+    assignModalEl.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      const id = button.getAttribute('data-user-id');
+      document.getElementById('assignObserverId').value = id;
+      const form = document.getElementById('assignObserverDistrictForm');
+      form.action = `/admin/observers/${id}/assign-district`;
+    });
+  }
 });
 </script>
 {% endblock %}

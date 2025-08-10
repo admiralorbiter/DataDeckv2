@@ -20,8 +20,14 @@
             {% for t in teachers %}
               <li class="list-group-item d-flex justify-content-between align-items-center">
                 <div>
-                  <strong>{{ t.first_name }} {{ t.last_name }}</strong>
+                  <a href="{{ url_for('main.observer_teacher', teacher_id=t.id) }}" class="text-decoration-none">
+                    <strong>{{ t.first_name }} {{ t.last_name }}</strong>
+                  </a>
                   <div class="text-muted small">{{ t.email }}</div>
+                </div>
+                <div class="text-end">
+                  <div class="small"><strong>{{ teacher_stats[t.id].sessions }}</strong> sessions</div>
+                  <div class="small text-muted">{{ teacher_stats[t.id].recent_media }} media</div>
                 </div>
               </li>
             {% endfor %}

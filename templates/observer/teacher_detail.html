@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher — {{ teacher.first_name }} {{ teacher.last_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <a href="{{ url_for('main.observer_dashboard') }}" class="btn btn-link p-0 mb-3">← Back to Observer Dashboard</a>
+
+  <h1 class="mb-1">{{ teacher.first_name }} {{ teacher.last_name }}</h1>
+  <div class="text-muted mb-3">{{ teacher.email }}{% if teacher.school %} • {{ teacher.school.name }}{% endif %}</div>
+
+  <div class="dd-card p-3 mb-4">
+    <h5 class="mb-2">Sessions</h5>
+    {% if sessions %}
+    <ul class="list-group list-group-flush">
+      {% for s in sessions %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span><strong>{{ s.name }}</strong> <span class="text-muted small">(Section {{ s.section }}, {{ s.module.display_name if s.module else 'No Module' }})</span></span>
+        <a href="{{ url_for('sessions.session_detail', session_id=s.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <p class="text-muted mb-0">No sessions found for this teacher.</p>
+    {% endif %}
+  </div>
+
+  <div class="dd-card p-3">
+    <h5 class="mb-2">Recent Media</h5>
+    {% if recent_media %}
+    <div class="row g-3">
+      {% for m in recent_media %}
+      <div class="col-6 col-md-3">
+        <a class="text-decoration-none" href="{{ url_for('media.media_detail', media_id=m.id) }}">
+          <div class="bg-light rounded p-2 text-center">
+            {% if m.image_file %}
+              <img src="{{ url_for('static', filename='uploads/' + m.image_file) }}" class="img-fluid rounded" alt="{{ m.title }}">
+            {% else %}
+              <div class="py-5 text-muted"><i class="fas fa-image"></i></div>
+            {% endif %}
+            <div class="small mt-2 text-truncate">{{ m.title }}</div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <p class="text-muted mb-0">No media uploaded yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

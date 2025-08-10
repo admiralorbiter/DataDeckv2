@@ -391,3 +391,371 @@ def delete_module(module_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500
+
+
+# -------------------- District Management --------------------
+
+
+@bp.route("/admin/districts/create", methods=["POST"])
+@login_required
+@admin_required
+def create_district():
+    name = request.form.get("name", "").strip()
+    code = request.form.get("code", "").strip() or None
+    if not name:
+        flash("District name is required.", "danger")
+        return redirect(url_for("admin.admin_dashboard"))
+
+    try:
+        if District.query.filter_by(name=name).first():
+            flash(f"District '{name}' already exists.", "danger")
+            return redirect(url_for("admin.admin_dashboard"))
+        if code and District.query.filter_by(code=code).first():
+            flash(f"District code '{code}' already exists.", "danger")
+            return redirect(url_for("admin.admin_dashboard"))
+
+        d = District(name=name, code=code)
+        db.session.add(d)
+        db.session.commit()
+        flash(f"District '{name}' created.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error creating district: {e}", "danger")
+    return redirect(url_for("admin.admin_dashboard"))
+
+
+@bp.route("/admin/districts/<int:district_id>", methods=["GET"])
+@login_required
+@admin_required
+def get_district(district_id: int):
+    d = District.query.get_or_404(district_id)
+    return jsonify({"id": d.id, "name": d.name, "code": d.code})
+
+
+@bp.route("/admin/districts/<int:district_id>/edit", methods=["POST"])
+@login_required
+@admin_required
+def edit_district(district_id: int):
+    d = District.query.get_or_404(district_id)
+    name = request.form.get("name", "").strip()
+    code = request.form.get("code", "").strip() or None
+    try:
+        if name and name != d.name:
+            if District.query.filter(
+                District.name == name, District.id != d.id
+            ).first():
+                flash(f"Another district already uses the name '{name}'.", "danger")
+                return redirect(url_for("admin.admin_dashboard"))
+            d.name = name
+        if (code or code is None) and code != d.code:
+            if (
+                code
+                and District.query.filter(
+                    District.code == code, District.id != d.id
+                ).first()
+            ):
+                flash(f"Another district already uses the code '{code}'.", "danger")
+                return redirect(url_for("admin.admin_dashboard"))
+            d.code = code
+        db.session.commit()
+        flash("District updated successfully.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error updating district: {e}", "danger")
+    return redirect(url_for("admin.admin_dashboard"))
+
+
+@bp.route("/admin/districts/<int:district_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def delete_district(district_id: int):
+    if not current_user.is_admin():
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Only administrators can delete districts",
+                }
+            ),
+            403,
+        )
+    d = District.query.get_or_404(district_id)
+    try:
+        if d.schools.count() > 0 or d.users.count() > 0:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": (
+                            "Cannot delete district with schools or users. "
+                            "Move or delete them first."
+                        ),
+                    }
+                ),
+                400,
+            )
+        db.session.delete(d)
+        db.session.commit()
+        flash("District deleted.", "success")
+        return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+# -------------------- School Management --------------------
+
+
+@bp.route("/admin/schools/create", methods=["POST"])
+@login_required
+@admin_required
+def create_school():
+    name = request.form.get("name", "").strip()
+    code = request.form.get("code", "").strip() or None
+    try:
+        district_id = int(request.form.get("district_id", "0"))
+    except ValueError:
+        district_id = 0
+
+    if not name or not district_id:
+        flash("School name and district are required.", "danger")
+        return redirect(url_for("admin.admin_dashboard"))
+
+    try:
+        if code and School.query.filter_by(code=code).first():
+            flash(f"School code '{code}' already exists.", "danger")
+            return redirect(url_for("admin.admin_dashboard"))
+
+        s = School(name=name, code=code, district_id=district_id)
+        db.session.add(s)
+        db.session.commit()
+        flash(f"School '{name}' created.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error creating school: {e}", "danger")
+    return redirect(url_for("admin.admin_dashboard"))
+
+
+@bp.route("/admin/schools/<int:school_id>", methods=["GET"])
+@login_required
+@admin_required
+def get_school(school_id: int):
+    s = School.query.get_or_404(school_id)
+    return jsonify(
+        {"id": s.id, "name": s.name, "code": s.code, "district_id": s.district_id}
+    )
+
+
+@bp.route("/admin/schools/<int:school_id>/edit", methods=["POST"])
+@login_required
+@admin_required
+def edit_school(school_id: int):
+    s = School.query.get_or_404(school_id)
+    name = request.form.get("name", "").strip()
+    code = request.form.get("code", "").strip() or None
+    try:
+        district_id = int(request.form.get("district_id", "0"))
+    except ValueError:
+        district_id = 0
+
+    try:
+        if name and name != s.name:
+            s.name = name
+        if (code or code is None) and code != s.code:
+            if (
+                code
+                and School.query.filter(School.code == code, School.id != s.id).first()
+            ):
+                flash(f"Another school already uses the code '{code}'.", "danger")
+                return redirect(url_for("admin.admin_dashboard"))
+            s.code = code
+        if district_id and district_id != s.district_id:
+            # Ensure district exists
+            if not District.query.get(district_id):
+                flash("Invalid district.", "danger")
+                return redirect(url_for("admin.admin_dashboard"))
+            s.district_id = district_id
+        db.session.commit()
+        flash("School updated successfully.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error updating school: {e}", "danger")
+    return redirect(url_for("admin.admin_dashboard"))
+
+
+@bp.route("/admin/schools/<int:school_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def delete_school(school_id: int):
+    if not current_user.is_admin():
+        return (
+            jsonify(
+                {"success": False, "message": "Only administrators can delete schools"}
+            ),
+            403,
+        )
+    s = School.query.get_or_404(school_id)
+    try:
+        if s.users.count() > 0:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": (
+                            "Cannot delete school with users. "
+                            "Reassign or delete users first."
+                        ),
+                    }
+                ),
+                400,
+            )
+        db.session.delete(s)
+        db.session.commit()
+        flash("School deleted.", "success")
+        return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+# -------------------- Observer Management --------------------
+
+
+@bp.route("/admin/observers/<int:user_id>/toggle", methods=["POST"])
+@login_required
+@admin_required
+def toggle_observer(user_id: int):
+    user = User.query.get_or_404(user_id)
+    if not isinstance(user, Observer):
+        flash("Selected user is not an observer.", "danger")
+        return redirect(url_for("admin.admin_dashboard"))
+    try:
+        user.is_active = not bool(user.is_active)
+        db.session.commit()
+        status = "activated" if user.is_active else "deactivated"
+        flash(f"Observer {status} successfully.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error updating observer: {e}", "danger")
+    return redirect(url_for("admin.admin_dashboard"))
+
+
+@bp.route("/admin/observers/<int:user_id>/reset-password", methods=["POST"])
+@login_required
+@admin_required
+def reset_observer_password(user_id: int):
+    if not current_user.is_admin():
+        flash("Only administrators can reset passwords.", "danger")
+        return redirect(url_for("admin.admin_dashboard"))
+    user = User.query.get_or_404(user_id)
+    if not isinstance(user, Observer):
+        flash("Selected user is not an observer.", "danger")
+        return redirect(url_for("admin.admin_dashboard"))
+    new_password = request.form.get("new_password", "").strip()
+    if not new_password:
+        flash("New password is required.", "danger")
+        return redirect(url_for("admin.admin_dashboard"))
+    try:
+        user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        flash("Observer password reset successfully.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error resetting password: {e}", "danger")
+    return redirect(url_for("admin.admin_dashboard"))
+
+
+@bp.route("/admin/observers/<int:user_id>/assign-district", methods=["POST"])
+@login_required
+@admin_required
+def assign_observer_district(user_id: int):
+    user = User.query.get_or_404(user_id)
+    if not isinstance(user, Observer):
+        return (
+            jsonify({"success": False, "message": "Selected user is not an observer."}),
+            400,
+        )
+    try:
+        district_id = int(request.form.get("district_id", "0"))
+    except ValueError:
+        district_id = 0
+    if not district_id:
+        return (
+            jsonify({"success": False, "message": "District is required."}),
+            400,
+        )
+    try:
+        if not District.query.get(district_id):
+            return (
+                jsonify({"success": False, "message": "Invalid district."}),
+                400,
+            )
+        user.district_id = district_id
+        db.session.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+# -------------------- Teacher Reassignment --------------------
+
+
+@bp.route("/admin/teachers/<int:user_id>/assign", methods=["POST"])
+@login_required
+@admin_required
+def assign_teacher(user_id: int):
+    """Assign or reassign a teacher's district and school."""
+    user = User.query.get_or_404(user_id)
+    if not user.is_teacher():
+        return (
+            jsonify({"success": False, "message": "Selected user is not a teacher."}),
+            400,
+        )
+
+    # Parse IDs
+    district_id_raw = request.form.get("district_id", "").strip()
+    school_id_raw = request.form.get("school_id", "").strip()
+    try:
+        district_id = int(district_id_raw) if district_id_raw else None
+    except ValueError:
+        return jsonify({"success": False, "message": "Invalid district id."}), 400
+    try:
+        school_id = int(school_id_raw) if school_id_raw else None
+    except ValueError:
+        return jsonify({"success": False, "message": "Invalid school id."}), 400
+
+    # Validate
+    if district_id is None:
+        return jsonify({"success": False, "message": "District is required."}), 400
+    district = District.query.get(district_id)
+    if not district:
+        return jsonify({"success": False, "message": "District not found."}), 404
+
+    if school_id is not None:
+        school = School.query.get(school_id)
+        if not school:
+            return jsonify({"success": False, "message": "School not found."}), 404
+        if school.district_id != district_id:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "School must belong to the selected district.",
+                    }
+                ),
+                400,
+            )
+
+    try:
+        user.district_id = district_id
+        user.school_id = school_id
+        user.validate()
+        db.session.commit()
+        return jsonify({"success": True})
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)}), 500

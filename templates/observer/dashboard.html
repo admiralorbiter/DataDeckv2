@@ -17,11 +17,25 @@
           <div class="card-body">
             <p><strong>Name:</strong> {{ district.name }}</p>
             <p><strong>Code:</strong> {{ district.code }}</p>
+            <div class="row text-center mt-3">
+              <div class="col-4">
+                <div class="h4 mb-0">{{ stats.teachers }}</div>
+                <div class="text-muted small">Teachers</div>
+              </div>
+              <div class="col-4">
+                <div class="h4 mb-0">{{ stats.sessions }}</div>
+                <div class="text-muted small">Sessions</div>
+              </div>
+              <div class="col-4">
+                <div class="h4 mb-0">{{ stats.recent_media|length }}</div>
+                <div class="text-muted small">Recent Media</div>
+              </div>
+            </div>
           </div>
         </div>
       {% endif %}
 
-      <div class="card">
+      <div class="card mb-4">
         <div class="card-header">Schools{% if district %} in {{ district.name }}{% endif %}</div>
         <ul class="list-group list-group-flush">
           {% if schools %}
@@ -38,6 +52,30 @@
           {% endif %}
         </ul>
       </div>
+
+      {% if stats.recent_media %}
+      <div class="card">
+        <div class="card-header">Recent Media in District</div>
+        <div class="card-body">
+          <div class="row g-3">
+            {% for m in stats.recent_media %}
+            <div class="col-6 col-md-3">
+              <a class="text-decoration-none" href="{{ url_for('media.media_detail', media_id=m.id) }}">
+                <div class="bg-light rounded p-2 text-center">
+                  {% if m.image_file %}
+                    <img src="{{ url_for('static', filename='uploads/' + m.image_file) }}" class="img-fluid rounded" alt="{{ m.title }}">
+                  {% else %}
+                    <div class="py-5 text-muted"><i class="fas fa-image"></i></div>
+                  {% endif %}
+                  <div class="small mt-2 text-truncate">{{ m.title }}</div>
+                </div>
+              </a>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>
