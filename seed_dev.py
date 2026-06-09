@@ -64,8 +64,8 @@ def seed(num_students: int = 20) -> None:
             role=User.Role.TEACHER,
             school_id=school.id,
             district_id=district.id,
-            school=school.name,
-            district=district.name,
+            school=school,
+            district=district,
         )
         db.session.add(teacher)
         db.session.flush()
