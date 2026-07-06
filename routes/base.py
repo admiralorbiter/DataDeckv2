@@ -50,6 +50,6 @@ def teacher_or_student_required(f):
 
         # Neither teacher nor student is logged in
         flash("Please log in to access this page.", "warning")
-        return redirect(url_for("main.index"))
+        return redirect(url_for("auth.login"))
 
     return decorated_function
