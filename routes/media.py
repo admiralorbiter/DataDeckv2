@@ -4,6 +4,8 @@ Media routes - Handle media upload, viewing, editing, and deletion.
 Supports both individual uploads and project galleries (Data Decks).
 """
 
+from datetime import datetime
+
 from flask import (
     current_app,
     flash,
@@ -16,12 +18,7 @@ from flask import (
 )
 from flask_login import current_user, login_required
 
-from forms import (
-    CommentForm,
-    MediaEditForm,
-    ProjectGalleryUploadForm,
-    SingleMediaUploadForm,
-)
+from forms import CommentForm, MediaEditForm, ProjectGalleryUploadForm
 from models import Comment, Media, Student, StudentMediaInteraction, db
 from services.media_service import MediaService
 
@@ -30,66 +27,10 @@ from .base import create_blueprint, student_required, teacher_or_student_require
 bp = create_blueprint("media")
 
 
-@bp.route("/media/upload/single", methods=["GET", "POST"])
+@bp.route("/media/upload", methods=["GET", "POST"])
 @student_required
-def upload_single():
-    """Upload a single media item (student only)."""
-    form = SingleMediaUploadForm()
-
-    # Get current student
-    student_id = session.get("student_id")
-    student = Student.query.get_or_404(student_id)
-    session_obj = student.section
-
-    if not session_obj:
-        flash("You are not assigned to an active session.", "warning")
-        return redirect(url_for("main.index"))
-
-    if form.validate_on_submit():
-        try:
-            # Prepare tags dictionary
-            tags = {
-                "is_graph": form.is_graph.data,
-                "graph_tag": form.graph_tag.data if form.graph_tag.data else None,
-                "variable_tag": (
-                    form.variable_tag.data if form.variable_tag.data else None
-                ),
-            }
-
-            # Create media item
-            media = MediaService.create_single_media(
-                session_id=session_obj.id,
-                student_id=student_id,
-                file=form.file.data,
-                title=form.title.data,
-                description=form.description.data,
-                tags=tags,
-            )
-
-            # Save to database
-            db.session.commit()
-
-            flash(f"Successfully uploaded '{media.title}'!", "success")
-            return redirect(
-                url_for("sessions.session_detail", session_id=session_obj.id)
-            )
-
-        except ValueError as e:
-            flash(str(e), "danger")
-        except Exception as e:
-            db.session.rollback()
-            flash("An error occurred while uploading. Please try again.", "danger")
-            current_app.logger.error(f"Media upload error: {e}")
-
-    return render_template(
-        "media/upload_single.html", form=form, student=student, session_data=session_obj
-    )
-
-
-@bp.route("/media/upload/project", methods=["GET", "POST"])
-@student_required
-def upload_project():
-    """Upload a project gallery/Data Deck (student only)."""
+def upload_unified_student():
+    """Unified media upload route for students. Supports 1-5 images."""
     form = ProjectGalleryUploadForm()
 
     # Get current student
@@ -103,21 +44,20 @@ def upload_project():
 
     if form.validate_on_submit():
         try:
-            # Validate file count (1-10 images)
             files = form.files.data
             if len(files) < 1:
                 flash("Please select at least 1 image.", "danger")
                 return render_template(
-                    "media/upload_project.html",
+                    "media/upload_unified.html",
                     form=form,
                     student=student,
                     session_data=session_obj,
                 )
 
-            if len(files) > 10:
-                flash("You can upload a maximum of 10 images per Data Deck.", "danger")
+            if len(files) > 5:
+                flash("You can upload a maximum of 5 images.", "danger")
                 return render_template(
-                    "media/upload_project.html",
+                    "media/upload_unified.html",
                     form=form,
                     student=student,
                     session_data=session_obj,
@@ -132,24 +72,40 @@ def upload_project():
                 ),
             }
 
-            # Create project gallery
-            media_items = MediaService.create_project_gallery(
-                session_id=session_obj.id,
-                student_id=student_id,
-                files=files,
-                title=form.title.data,
-                description=form.description.data,
-                tags=tags,
-            )
+            if len(files) == 1:
+                # Save as single media upload
+                media = MediaService.create_single_media(
+                    session_id=session_obj.id,
+                    student_id=student_id,
+                    file=files[0],
+                    title=form.title.data,
+                    description=form.description.data,
+                    tags=tags,
+                )
+                db.session.commit()
+                flash(f"Successfully uploaded '{media.title}'!", "success")
+            else:
+                # Save as project gallery upload
+                proj_title = form.title.data
+                if not proj_title:
+                    proj_title = (
+                        f"Data Deck Project - {datetime.now().strftime('%Y-%m-%d')}"
+                    )
 
-            # Save to database
-            db.session.commit()
+                media_items = MediaService.create_project_gallery(
+                    session_id=session_obj.id,
+                    student_id=student_id,
+                    files=files,
+                    title=proj_title,
+                    description=form.description.data,
+                    tags=tags,
+                )
+                db.session.commit()
+                flash(
+                    f"Successfully created Data Deck with {len(media_items)} images!",
+                    "success",
+                )
 
-            flash(
-                f"Successfully created Data Deck '{form.title.data}' "
-                f"with {len(media_items)} images!",
-                "success",
-            )
             return redirect(
                 url_for("sessions.session_detail", session_id=session_obj.id)
             )
@@ -158,14 +114,11 @@ def upload_project():
             flash(str(e), "danger")
         except Exception as e:
             db.session.rollback()
-            flash(
-                "An error occurred while creating your Data Deck. Please try again.",
-                "danger",
-            )
-            current_app.logger.error(f"Project upload error: {e}")
+            flash("An error occurred while uploading. Please try again.", "danger")
+            current_app.logger.error(f"Media upload error: {e}")
 
     return render_template(
-        "media/upload_project.html",
+        "media/upload_unified.html",
         form=form,
         student=student,
         session_data=session_obj,
@@ -692,3 +645,97 @@ def clear_reactions(media_id):
     # Redirect back to referrer if available, else media detail
     ref = request.headers.get("Referer")
     return redirect(ref or url_for("media.media_detail", media_id=media_id))
+
+
+@bp.route("/sessions/<int:session_id>/media/upload", methods=["GET", "POST"])
+@login_required
+def upload_unified_teacher(session_id):
+    """Unified media upload route for teachers. Supports 1-5 images."""
+    from models import Session
+
+    session_obj = Session.query.get_or_404(session_id)
+
+    # Permission check: teacher must own the session, or user must be admin/staff
+    if not (current_user.is_admin() or current_user.is_staff()):
+        if current_user.is_teacher() and session_obj.created_by_id != current_user.id:
+            flash("You can only upload to your own sessions.", "danger")
+            return redirect(url_for("sessions.list_sessions"))
+
+    form = ProjectGalleryUploadForm()
+
+    if form.validate_on_submit():
+        try:
+            files = form.files.data
+            if len(files) < 1:
+                flash("Please select at least 1 image.", "danger")
+                return render_template(
+                    "media/upload_unified.html",
+                    form=form,
+                    session_data=session_obj,
+                )
+
+            if len(files) > 5:
+                flash("You can upload a maximum of 5 images.", "danger")
+                return render_template(
+                    "media/upload_unified.html",
+                    form=form,
+                    session_data=session_obj,
+                )
+
+            # Prepare tags dictionary
+            tags = {
+                "is_graph": form.is_graph.data,
+                "graph_tag": form.graph_tag.data if form.graph_tag.data else None,
+                "variable_tag": (
+                    form.variable_tag.data if form.variable_tag.data else None
+                ),
+            }
+
+            if len(files) == 1:
+                # Save as single media upload
+                media = MediaService.create_single_media(
+                    session_id=session_obj.id,
+                    posted_by_admin_id=current_user.id,
+                    file=files[0],
+                    title=form.title.data,
+                    description=form.description.data,
+                    tags=tags,
+                )
+                db.session.commit()
+                flash(f"Successfully uploaded '{media.title}'!", "success")
+            else:
+                # Save as project gallery upload
+                proj_title = form.title.data
+                if not proj_title:
+                    proj_title = (
+                        f"Data Deck Example - {datetime.now().strftime('%Y-%m-%d')}"
+                    )
+
+                media_items = MediaService.create_project_gallery(
+                    session_id=session_obj.id,
+                    posted_by_admin_id=current_user.id,
+                    files=files,
+                    title=proj_title,
+                    description=form.description.data,
+                    tags=tags,
+                )
+                db.session.commit()
+                flash(
+                    f"Successfully uploaded Data Deck with {len(media_items)} images!",
+                    "success",
+                )
+
+            return redirect(
+                url_for("sessions.session_detail", session_id=session_obj.id)
+            )
+
+        except ValueError as e:
+            flash(str(e), "danger")
+        except Exception as e:
+            db.session.rollback()
+            flash("An error occurred while uploading. Please try again.", "danger")
+            current_app.logger.error(f"Media upload error: {e}")
+
+    return render_template(
+        "media/upload_unified.html", form=form, session_data=session_obj
+    )

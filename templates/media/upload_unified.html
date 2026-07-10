@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if current_user.is_authenticated %}
+    Upload Example Media - {{ current_user.first_name }} {{ current_user.last_name }}
+  {% else %}
+    Upload Your Media - {{ student.character_name }}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    {% if current_user.is_authenticated %}
+                        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center"
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-chalkboard-teacher fa-lg"></i>
+                        </div>
+                    {% else %}
+                        {% if student.avatar_path %}
+                            <img src="{{ student.avatar_path }}" alt="{{ student.character_name }}"
+                                 class="rounded-circle" width="50" height="50">
+                        {% else %}
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                 style="width: 50px; height: 50px;">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <div>
+                    <h2 class="mb-0">
+                        {% if current_user.is_authenticated %}
+                            Upload Example Media
+                        {% else %}
+                            Upload Your Media
+                        {% endif %}
+                    </h2>
+                    <p class="text-muted mb-0">
+                        {% if current_user.is_authenticated %}
+                            Teacher Workspace • {{ session_data.name }}
+                        {% else %}
+                            {{ student.character_name }} • {{ session_data.name }}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unified Slide-Deck Workspace -->
+    <form method="POST" enctype="multipart/form-data" id="unifiedUploadForm">
+        {{ form.hidden_tag() }}
+
+        <!-- Hidden Native File Input -->
+        <input type="file" id="hiddenFilesInput" accept="image/*" multiple style="display: none;">
+        
+        <!-- Hidden WTForms field -->
+        <div style="display:none;">
+            {{ form.files(id="files") }}
+        </div>
+
+        <div class="row mb-4">
+            <!-- Left Slide Navigation Sidebar (PowerPoint Style) -->
+            <div class="col-md-3 mb-4 mb-md-0">
+                <div class="card border-0 bg-light p-3 rounded-3" style="max-height: 500px; overflow-y: auto;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted fw-bold small uppercase">Deck Slides</span>
+                        <span class="badge bg-secondary" id="slideCounterBadge">0/5</span>
+                    </div>
+
+                    <!-- Slide Thumbnails Container -->
+                    <div class="d-flex flex-column gap-3" id="slideNavigatorStrip">
+                        <!-- Generated Dynamically by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Slide Canvas & Large Dropzone -->
+            <div class="col-md-9">
+                <div class="dd-card border-0 shadow-sm p-4 d-flex flex-column justify-content-center align-items-center position-relative" 
+                     id="slideCanvas" style="min-height: 380px; background-color: var(--color-surface);">
+                    <!-- Generated Dynamically by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Metadata & Forms Section -->
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-9 offset-md-3">
+                <div class="dd-card shadow-sm border-0 p-4">
+                    <h5 class="fw-bold mb-4"><i class="fas fa-info-circle text-primary me-2"></i>Global Metadata</h5>
+
+                    <!-- Title -->
+                    <div class="mb-4">
+                        {{ form.title.label(class="form-label fw-bold") }}
+                        {{ form.title(class="form-control form-control-lg", id="projectTitleInput") }}
+                        {% if form.title.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.title.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Leave blank to auto-generate a title from your tags (students only).
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-4">
+                        {{ form.description.label(class="form-label fw-bold") }}
+                        {{ form.description(class="form-control", rows=3) }}
+                        {% if form.description.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.description.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Tags Section -->
+                    <div class="card bg-light border-0 rounded-3 mb-4">
+                        <div class="card-header border-0 bg-transparent pt-3 pb-0">
+                            <h6 class="mb-0 fw-bold"><i class="fas fa-tags text-primary"></i> Categorize Your Media</h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- Graph Checkbox -->
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    {{ form.is_graph(class="form-check-input", role="switch") }}
+                                    {{ form.is_graph.label(class="form-check-label fw-bold") }}
+                                </div>
+                            </div>
+
+                            <!-- Graph Type -->
+                            <div class="mb-3" id="graphTypeSection" style="display: none;">
+                                {{ form.graph_tag.label(class="form-label") }}
+                                {{ form.graph_tag(class="form-select") }}
+                            </div>
+
+                            <!-- Variables -->
+                            <div class="mb-0">
+                                {{ form.variable_tag.label(class="form-label") }}
+                                {{ form.variable_tag(class="form-control") }}
+                                <div class="form-text">What main variables are analyzed in this deck?</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn dd-btn-primary btn-lg", id="submitBtn") }}
+                        <a href="{{ url_for('sessions.session_detail', session_id=session_data.id) }}"
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Session
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Stylings for Slide deck Interface -->
+<style>
+/* Sidebar slide thumbnails */
+.slide-thumb-card {
+    position: relative;
+    border: 2px solid var(--color-border);
+    background-color: #ffffff;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    overflow: hidden;
+    aspect-ratio: 16 / 10;
+    transition: all 0.2s ease-in-out;
+}
+.slide-thumb-card:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+}
+.slide-thumb-card.active {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+.slide-thumb-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.slide-thumb-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.65);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+}
+.slide-thumb-add {
+    aspect-ratio: 16 / 10;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    background-color: transparent;
+    transition: all 0.2s ease;
+}
+.slide-thumb-add:hover {
+    border-color: var(--color-primary);
+    background-color: rgba(37, 99, 235, 0.03);
+}
+
+/* Large Canvas dropzone */
+.canvas-dropzone {
+    width: 100%;
+    height: 100%;
+    border: 3px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.canvas-dropzone:hover {
+    border-color: var(--color-primary);
+    background-color: rgba(37, 99, 235, 0.03);
+}
+.canvas-dropzone.dragover {
+    border-color: var(--color-success);
+    background-color: rgba(16, 185, 129, 0.08);
+}
+.canvas-preview-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.canvas-preview-img {
+    max-height: 330px;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+}
+.canvas-delete-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(239, 68, 68, 0.9);
+    border: none;
+    color: white;
+    border-radius: 30px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: var(--shadow-sm);
+    transition: background 0.2s ease;
+}
+.canvas-delete-btn:hover {
+    background: var(--color-error);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const hiddenFilesInput = document.getElementById('hiddenFilesInput');
+    const nativeFilesField = document.getElementById('files');
+    const slideNavigatorStrip = document.getElementById('slideNavigatorStrip');
+    const slideCounterBadge = document.getElementById('slideCounterBadge');
+    const slideCanvas = document.getElementById('slideCanvas');
+    const isGraphCheck = document.getElementById('is_graph');
+    const graphTypeSection = document.getElementById('graphTypeSection');
+    const submitBtn = document.getElementById('submitBtn');
+    const unifiedUploadForm = document.getElementById('unifiedUploadForm');
+
+    // List of selected files in order
+    let slidesList = [];
+    let activeSlideIndex = 0;
+
+    // Initialize layout
+    updateWorkspace();
+
+    // Trigger local browse dialog
+    function openBrowse() {
+        hiddenFilesInput.click();
+    }
+
+    hiddenFilesInput.addEventListener('change', function(e) {
+        addIncomingFiles(e.target.files);
+        hiddenFilesInput.value = ''; // Reset
+    });
+
+    // Add selected/dropped files to presentation deck
+    function addIncomingFiles(files) {
+        const remainingSlots = 5 - slidesList.length;
+        const toAdd = Array.from(files).slice(0, remainingSlots);
+
+        if (Array.from(files).length > remainingSlots) {
+            alert('You can upload a maximum of 5 images to your Data Deck.');
+        }
+
+        toAdd.forEach(file => {
+            if (file.type.startsWith('image/')) {
+                slidesList.push({
+                    file: file,
+                    url: URL.createObjectURL(file)
+                });
+            } else {
+                alert('Only image files are allowed.');
+            }
+        });
+
+        // Set active slide to the first added slide in this batch
+        if (toAdd.length > 0) {
+            activeSlideIndex = slidesList.length - toAdd.length;
+        }
+
+        updateWorkspace();
+    }
+
+    // Refresh entire slide deck editor UI
+    function updateWorkspace() {
+        // 1. Update counter
+        slideCounterBadge.innerText = `${slidesList.length}/5`;
+
+        // 2. Render Left Sidebar Navigation
+        slideNavigatorStrip.innerHTML = '';
+
+        slidesList.forEach((slide, index) => {
+            const card = document.createElement('div');
+            card.className = `slide-thumb-card ${index === activeSlideIndex ? 'active' : ''}`;
+            
+            const img = document.createElement('img');
+            img.src = slide.url;
+            img.alt = `Slide ${index + 1}`;
+
+            const label = document.createElement('div');
+            label.className = 'slide-thumb-label';
+            label.innerHTML = `
+                <span>Slide ${index + 1}</span>
+                ${index === 0 ? '<span class="text-primary text-uppercase" style="font-size: 8px;">Cover</span>' : ''}
+            `;
+
+            card.appendChild(img);
+            card.appendChild(label);
+            card.addEventListener('click', () => {
+                activeSlideIndex = index;
+                updateWorkspace();
+            });
+
+            slideNavigatorStrip.appendChild(card);
+        });
+
+        // Add empty "+" slide slot if less than 5
+        if (slidesList.length < 5) {
+            const addCard = document.createElement('div');
+            addCard.className = 'slide-thumb-add d-flex flex-column align-items-center justify-content-center text-muted p-2';
+            addCard.innerHTML = `
+                <i class="fas fa-plus mb-1"></i>
+                <span style="font-size: 9px; font-weight: bold;">Add Slide</span>
+            `;
+            addCard.addEventListener('click', openBrowse);
+            slideNavigatorStrip.appendChild(addCard);
+        }
+
+        // 3. Render Right Workspace Canvas
+        slideCanvas.innerHTML = '';
+
+        if (activeSlideIndex < slidesList.length) {
+            // Render active slide large preview
+            const currentSlide = slidesList[activeSlideIndex];
+
+            const previewWrapper = document.createElement('div');
+            previewWrapper.className = 'canvas-preview-wrapper';
+            
+            const img = document.createElement('img');
+            img.src = currentSlide.url;
+            img.className = 'img-fluid canvas-preview-img';
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'canvas-delete-btn';
+            deleteBtn.innerHTML = '<i class="fas fa-trash-alt me-1"></i> Delete Slide';
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Revoke preview URL memory
+                URL.revokeObjectURL(slidesList[activeSlideIndex].url);
+                
+                // Remove slide
+                slidesList.splice(activeSlideIndex, 1);
+                
+                // Select previous slide
+                activeSlideIndex = Math.max(0, activeSlideIndex - 1);
+                updateWorkspace();
+            });
+
+            previewWrapper.appendChild(img);
+            previewWrapper.appendChild(deleteBtn);
+            slideCanvas.appendChild(previewWrapper);
+        } else {
+            // Render large dropzone when canvas is empty (0 slides)
+            const dropzone = document.createElement('div');
+            dropzone.className = 'canvas-dropzone d-flex flex-column align-items-center justify-content-center p-5';
+            dropzone.innerHTML = `
+                <i class="fas fa-cloud-upload-alt fa-4x text-primary mb-3"></i>
+                <h4 class="fw-bold text-muted mb-2">Drag & Drop Your First Slide Here</h4>
+                <p class="text-muted mb-0">or click to browse local files</p>
+                <span class="text-muted mt-2" style="font-size: 11px;">Supports up to 5 slide images</span>
+            `;
+
+            // Click listener
+            dropzone.addEventListener('click', openBrowse);
+
+            // Drag and drop listeners
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.classList.add('dragover');
+            });
+
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.classList.remove('dragover');
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+                if (e.dataTransfer.files) {
+                    addIncomingFiles(e.dataTransfer.files);
+                }
+            });
+
+            slideCanvas.appendChild(dropzone);
+        }
+    }
+
+    // Toggle graph type field display
+    isGraphCheck.addEventListener('change', function() {
+        graphTypeSection.style.display = this.checked ? 'block' : 'none';
+    });
+
+    // Form submission processing
+    unifiedUploadForm.addEventListener('submit', function(e) {
+        if (slidesList.length === 0) {
+            e.preventDefault();
+            alert('Please add at least one image to upload.');
+            return;
+        }
+
+        // Programmatically populate the native file field with our list
+        const dataTransfer = new DataTransfer();
+        slidesList.forEach(slide => dataTransfer.items.add(slide.file));
+        nativeFilesField.files = dataTransfer.files;
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading Presentation...';
+    });
+});
+</script>
+{% endblock %}

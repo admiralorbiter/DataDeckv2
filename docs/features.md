@@ -39,21 +39,24 @@
 - [x] **Session Analytics (Teacher)** - Totals, participation, and top media
 - [x] **Teacher Controls** - Reset reactions (session-wide, per-student, per-media)
 
-## In Progress Features 🚧
-
-### Student Management (M4 - Next Priority)
-- [ ] **Student List View** - Per-teacher student management interface
-- [ ] **Student Deletion** - Remove students with ownership checks
-- [ ] **PIN Card Export** - Generate printable PDF cards with student names/PINs
-- [ ] **Student Profile Management** - Individual student operations
-
-## Planned Features 📋
+### Student Management (M4)
+- [x] **Student List View** - Per-teacher student management interface
+- [x] **Student Deletion** - Remove students with ownership checks
+- [x] **PIN Card Export** - Generate printable PDF cards with student names/PINs
+- [x] **Student Profile Management** - Individual student operations
 
 ### Media Management (M5)
-- [ ] **Image Upload** - Validate file type/size, generate titles from tags
-- [ ] **Media Editing** - Update tags and recompute titles
-- [ ] **Media Deletion** - Remove media with file cleanup
-- [ ] **Project Galleries** - Multi-image project uploads with gallery view
+- [x] **Unified Image Upload** - Validate file type/size, strip metadata, anonymize filenames
+- [x] **Auto-detect Single vs. Multi** - Detect and save as single upload or project Data Deck based on file count
+- [x] **Slide-Deck Editor UI** - Beautiful presentation layout navigator (max 5 slides)
+- [x] **Media Editing** - Update tags and recompute titles
+- [x] **Media Deletion** - Remove media with physical file cleanup
+
+## In Progress Features 🚧
+
+*(None currently)*
+
+## Planned Features 📋
 
 ### Enhanced Dashboards (M8)
 - [ ] **Observer Dashboard** - District-wide activity monitoring
@@ -75,8 +78,8 @@
 | Session Viewing | ✅ All | ✅ All | ✅ Own | ✅ District | ✅ Enrolled |
 | Module Management | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Student Management | ✅ | ✅ | ✅ Own | ❌ | ❌ |
-| Media Upload | 📋 | 📋 | 📋 | ❌ | 📋 |
-| Comments/Reactions | 📋 | 📋 | ✅ View/Reset | ❌ | ✅ |
+| Media Upload | ✅ | ✅ | ✅ | ❌ | ✅ |
+| Comments/Reactions | ✅ | ✅ | ✅ View/Reset | ❌ | ✅ |
 
 **Legend**: ✅ Implemented | 📋 Planned | ❌ Not Applicable
 

@@ -383,9 +383,9 @@ class ProjectGalleryUploadForm(FlaskForm):
     )
 
     title = StringField(
-        "Project Title",
-        validators=[DataRequired(), Length(min=3, max=255)],
-        render_kw={"placeholder": "e.g., Climate Data Analysis Project"},
+        "Title",
+        validators=[Optional(), Length(max=255)],
+        render_kw={"placeholder": "Leave blank to auto-generate from tags"},
     )
 
     description = TextAreaField(

@@ -59,11 +59,11 @@ Indexes/Constraints
   - POST `/sessions/<session_id>/(archive|unarchive|pause|delete)`
   - GET `/sessions/check-availability?section=H`
 - Media
-  - GET/POST `/sessions/<session_id>/media/upload`
+  - GET/POST `/media/upload` (unified student upload: 1-5 images, auto-detects single vs project)
+  - GET/POST `/sessions/<session_id>/media/upload` (unified teacher upload: 1-5 images, auto-detects single vs project)
   - GET/POST `/media/<media_id>/edit`
   - POST `/media/<media_id>/delete`
   - POST `/media/<media_id>/react/<badge_type>`
-  - GET/POST `/sessions/<session_id>/project/upload`
 - Posts
   - GET `/post/<media_id>`
   - POST `/post/<media_id>/comment`

@@ -9,6 +9,7 @@ import uuid
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
+from flask import current_app
 from PIL import Image
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
@@ -23,7 +24,7 @@ class MediaService:
     # Configuration
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
-    MAX_IMAGES_PER_PROJECT = 10
+    MAX_IMAGES_PER_PROJECT = 5
     MIN_IMAGES_PER_PROJECT = 1
 
     # Image processing
@@ -86,32 +87,41 @@ class MediaService:
         )
 
     @staticmethod
-    def generate_filename(original_filename: str, student_id: int) -> str:
+    def generate_filename(
+        original_filename: str, student_id: int = None, user_id: int = None
+    ) -> str:
         """
-        Generate secure, unique filename for uploaded media.
+        Generate secure, unique, and anonymous filename for uploaded media.
 
         Args:
             original_filename: Original filename from upload
-            student_id: ID of uploading student
+            student_id: ID of uploading student (optional)
+            user_id: ID of uploading teacher/admin (optional)
 
         Returns:
             Secure filename with timestamp and UUID
         """
-        # Get file extension
-        ext = ""
-        if "." in original_filename:
+        # Get file extension safely
+        ext = ".png"
+        if original_filename and "." in original_filename:
             ext = "." + secure_filename(original_filename).rsplit(".", 1)[1].lower()
 
         # Generate unique filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        unique_id = str(uuid.uuid4())[:8]
+        unique_id = str(uuid.uuid4())
 
-        return f"student_{student_id}_{timestamp}_{unique_id}{ext}"
+        if student_id:
+            return f"student_{student_id}_{timestamp}_{unique_id[:8]}{ext}"
+        elif user_id:
+            return f"teacher_{user_id}_{timestamp}_{unique_id[:8]}{ext}"
+        else:
+            return f"media_{timestamp}_{unique_id[:8]}{ext}"
 
     @staticmethod
     def process_image(file_path: str) -> Dict[str, str]:
         """
-        Process uploaded image: resize if needed, create thumbnail.
+        Process uploaded image: resize if needed, create thumbnail,
+        and strip all EXIF metadata.
 
         Args:
             file_path: Path to the uploaded image
@@ -127,6 +137,9 @@ class MediaService:
                 if img.mode in ("RGBA", "P"):
                     img = img.convert("RGB")
 
+                # Strip EXIF metadata for COPPA/FERPA compliance
+                img.info.clear()
+
                 # Resize if image is too large
                 if (
                     img.width > MediaService.MAX_IMAGE_DIMENSION
@@ -139,7 +152,9 @@ class MediaService:
                         ),
                         Image.Resampling.LANCZOS,
                     )
-                    img.save(file_path, optimize=True, quality=85)
+
+                # Save optimized original image without EXIF
+                img.save(file_path, optimize=True, quality=85)
 
                 # Create thumbnail
                 thumb_path = file_path.replace(".", "_thumb.")
@@ -147,6 +162,9 @@ class MediaService:
                 thumb_img.thumbnail(
                     MediaService.THUMBNAIL_SIZE, Image.Resampling.LANCZOS
                 )
+
+                # Strip metadata from thumbnail too
+                thumb_img.info.clear()
                 thumb_img.save(thumb_path, optimize=True, quality=80)
                 processed_paths["thumbnail"] = thumb_path
 
@@ -159,8 +177,9 @@ class MediaService:
     @staticmethod
     def create_single_media(
         session_id: int,
-        student_id: int,
-        file: FileStorage,
+        student_id: int = None,
+        posted_by_admin_id: int = None,
+        file: FileStorage = None,
         title: str = "",
         description: str = "",
         tags: Dict[str, str] = None,
@@ -170,7 +189,8 @@ class MediaService:
 
         Args:
             session_id: ID of the session
-            student_id: ID of the uploading student
+            student_id: ID of the uploading student (optional)
+            posted_by_admin_id: ID of the uploading teacher/admin (optional)
             file: The uploaded file
             title: Media title (auto-generated if empty)
             description: Media description
@@ -185,9 +205,17 @@ class MediaService:
             raise ValueError(error)
 
         # Generate filename and save file
-        filename = MediaService.generate_filename(file.filename, student_id)
-        # Note: In a real implementation, you'd save to a configured upload directory
-        # For now, we'll just store the filename
+        filename = MediaService.generate_filename(
+            file.filename, student_id=student_id, user_id=posted_by_admin_id
+        )
+
+        uploads_dir = os.path.join(current_app.root_path, "static", "uploads")
+        os.makedirs(uploads_dir, exist_ok=True)
+        file_path = os.path.join(uploads_dir, filename)
+        file.save(file_path)
+
+        # Process image (resize/thumbnail, EXIF strip)
+        MediaService.process_image(file_path)
 
         # Auto-generate title if not provided
         if not title:
@@ -197,6 +225,7 @@ class MediaService:
         media = Media(
             session_id=session_id,
             student_id=student_id,
+            posted_by_admin_id=posted_by_admin_id,
             title=title,
             description=description,
             media_type=MediaType.IMAGE,
@@ -212,9 +241,10 @@ class MediaService:
     @staticmethod
     def create_project_gallery(
         session_id: int,
-        student_id: int,
-        files: List[FileStorage],
-        title: str,
+        student_id: int = None,
+        posted_by_admin_id: int = None,
+        files: List[FileStorage] = None,
+        title: str = "",
         description: str = "",
         tags: Dict[str, str] = None,
     ) -> Optional[List[Media]]:
@@ -223,7 +253,8 @@ class MediaService:
 
         Args:
             session_id: ID of the session
-            student_id: ID of the uploading student
+            student_id: ID of the uploading student (optional)
+            posted_by_admin_id: ID of the uploading teacher/admin (optional)
             files: List of uploaded files (1-10 images)
             title: Project title
             description: Project description
@@ -256,8 +287,17 @@ class MediaService:
 
         # Create media records for each file
         media_items = []
+        uploads_dir = os.path.join(current_app.root_path, "static", "uploads")
+        os.makedirs(uploads_dir, exist_ok=True)
+
         for i, file in enumerate(files):
-            filename = MediaService.generate_filename(file.filename, student_id)
+            filename = MediaService.generate_filename(
+                file.filename, student_id=student_id, user_id=posted_by_admin_id
+            )
+
+            file_path = os.path.join(uploads_dir, filename)
+            file.save(file_path)
+            MediaService.process_image(file_path)
 
             # First image is the primary/cover image
             is_primary = i == 0
@@ -266,6 +306,7 @@ class MediaService:
             media = Media(
                 session_id=session_id,
                 student_id=student_id,
+                posted_by_admin_id=posted_by_admin_id,
                 title=item_title,
                 description=description if is_primary else "",
                 media_type=MediaType.IMAGE,
@@ -373,11 +414,29 @@ class MediaService:
         if media.is_project and media.project_group:
             project_media = MediaService.get_project_gallery(media.project_group)
             for item in project_media:
+                if item.image_file:
+                    uploads_dir = os.path.join(
+                        current_app.root_path, "static", "uploads"
+                    )
+                    file_path = os.path.join(uploads_dir, item.image_file)
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                    # Also remove thumbnail
+                    thumb_path = file_path.replace(".", "_thumb.")
+                    if os.path.exists(thumb_path):
+                        os.remove(thumb_path)
                 db.session.delete(item)
-                # TODO: Delete actual files from storage
         else:
+            if media.image_file:
+                uploads_dir = os.path.join(current_app.root_path, "static", "uploads")
+                file_path = os.path.join(uploads_dir, media.image_file)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                # Also remove thumbnail
+                thumb_path = file_path.replace(".", "_thumb.")
+                if os.path.exists(thumb_path):
+                    os.remove(thumb_path)
             db.session.delete(media)
-            # TODO: Delete actual file from storage
 
         return True
 
