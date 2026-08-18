@@ -1,10 +1,12 @@
+import csv
 from functools import wraps
+import io
 
 from flask import flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from werkzeug.security import generate_password_hash
 
-from forms import ModuleForm, UserCreationForm
+from forms import DistrictSchoolImportForm, ModuleForm, UserCreationForm
 from models.base import db
 from models.district import District
 from models.module import Module
@@ -35,6 +37,7 @@ def admin_required(f):
 def admin_dashboard():
     form = UserCreationForm()
     module_form = ModuleForm()
+    import_form = DistrictSchoolImportForm()
     users = User.query.order_by(User.created_at.desc()).all()
     schools = School.query.all()
     districts = District.query.all()
@@ -43,6 +46,7 @@ def admin_dashboard():
         "admin/dashboard.html",
         form=form,
         module_form=module_form,
+        import_form=import_form,
         roles=User.Role,
         users=users,
         schools=schools,
@@ -759,3 +763,202 @@ def assign_teacher(user_id: int):
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500
+
+
+from pathlib import Path
+from typing import Any, Dict, Union
+
+
+def import_districts_and_schools(
+    file_source: Union[str, Path, io.StringIO, Any],
+    selected_district_id: int = None,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """Import districts and schools from a CSV source into the database.
+
+    Args:
+        file_source: File path (str/Path) or readable text stream containing CSV content.
+        selected_district_id: Optional fallback district ID if district_name is absent in CSV.
+        dry_run: If True, rollbacks changes instead of committing.
+
+    Returns:
+        Dict containing metrics and error details.
+    """
+    districts_created = 0
+    districts_reused = 0
+    schools_created = 0
+    schools_skipped = 0
+    error_rows = 0
+    errors = []
+
+    district_cache = {}
+
+    close_stream = False
+    if isinstance(file_source, (str, Path)):
+        path = Path(file_source)
+        if not path.is_file():
+            return {
+                "success": False,
+                "districts_created": 0,
+                "districts_reused": 0,
+                "districts_total": 0,
+                "schools_created": 0,
+                "schools_skipped": 0,
+                "error_rows": 1,
+                "errors": [f"File not found at '{file_source}'"],
+            }
+        stream = open(path, mode="r", encoding="utf-8-sig")
+        close_stream = True
+    else:
+        stream = file_source
+
+    selected_district = None
+    if selected_district_id:
+        try:
+            selected_district = District.query.get(int(selected_district_id))
+        except (ValueError, TypeError):
+            pass
+
+    try:
+        reader = csv.DictReader(stream)
+
+        for idx, row in enumerate(reader, start=1):
+            try:
+                district_name = (
+                    row.get("district_name")
+                    or row.get("district")
+                    or row.get("District")
+                    or ""
+                ).strip()
+                district_code = (row.get("district_code") or "").strip()
+                school_name = (
+                    row.get("school_name")
+                    or row.get("school")
+                    or row.get("School")
+                    or ""
+                ).strip()
+                school_code = (row.get("school_code") or "").strip()
+
+                if not district_name and selected_district:
+                    district_name = selected_district.name
+
+                if not district_name or not school_name:
+                    err_msg = f"Row {idx}: Missing required field ('district_name' or 'school_name')."
+                    errors.append(err_msg)
+                    error_rows += 1
+                    continue
+
+                # 1. District lookup / creation
+                if district_name in district_cache:
+                    district = district_cache[district_name]
+                else:
+                    district = District.query.filter_by(name=district_name).first()
+                    if district:
+                        districts_reused += 1
+                    else:
+                        district = District(
+                            name=district_name,
+                            code=district_code if district_code else None,
+                        )
+                        db.session.add(district)
+                        db.session.flush()
+                        districts_created += 1
+
+                    district_cache[district_name] = district
+
+                # 2. School lookup / creation
+                existing_school = School.query.filter_by(
+                    name=school_name, district_id=district.id
+                ).first()
+
+                if existing_school:
+                    schools_skipped += 1
+                else:
+                    school = School(
+                        name=school_name,
+                        code=school_code if school_code else None,
+                        district_id=district.id,
+                    )
+                    db.session.add(school)
+                    schools_created += 1
+
+            except Exception as row_err:
+                db.session.rollback()
+                errors.append(f"Row {idx}: {row_err}")
+                error_rows += 1
+
+        if dry_run:
+            db.session.rollback()
+        else:
+            db.session.commit()
+
+    except Exception as general_err:
+        db.session.rollback()
+        errors.append(f"Failed to process CSV file: {general_err}")
+        error_rows += 1
+    finally:
+        if close_stream:
+            stream.close()
+
+    districts_total = len(district_cache)
+
+    return {
+        "success": error_rows == 0,
+        "districts_created": districts_created,
+        "districts_reused": districts_reused,
+        "districts_total": districts_total,
+        "schools_created": schools_created,
+        "schools_skipped": schools_skipped,
+        "error_rows": error_rows,
+        "errors": errors,
+    }
+
+
+@bp.route("/admin/import_districts_schools", methods=["POST"])
+@login_required
+@admin_required
+def import_districts_schools():
+    """Import districts and schools from uploaded CSV file."""
+    form = DistrictSchoolImportForm()
+    if not form.validate_on_submit():
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"{field}: {error}", "danger")
+        return redirect(url_for("admin.admin_dashboard"))
+
+    file = form.csv_file.data
+    district_id_raw = request.form.get("district_id", "").strip()
+    selected_district_id = None
+    if district_id_raw:
+        try:
+            selected_district_id = int(district_id_raw)
+        except ValueError:
+            pass
+
+    try:
+        stream = io.StringIO(file.stream.read().decode("utf-8-sig"), newline=None)
+        result = import_districts_and_schools(
+            file_source=stream,
+            selected_district_id=selected_district_id,
+            dry_run=False,
+        )
+
+        schools_cnt = result["schools_created"]
+        districts_cnt = result["districts_total"]
+        error_cnt = result["error_rows"]
+
+        dist_str = "district" if districts_cnt == 1 else "districts"
+        sch_str = "school" if schools_cnt == 1 else "schools"
+        summary_msg = f"{schools_cnt} {sch_str} imported across {districts_cnt} {dist_str}. {error_cnt} errors."
+
+        if error_cnt > 0:
+            flash(summary_msg, "warning")
+            for err in result["errors"]:
+                flash(err, "danger")
+        else:
+            flash(summary_msg, "success")
+
+    except Exception as e:
+        flash(f"Error processing CSV file: {e}", "danger")
+
+    return redirect(url_for("admin.admin_dashboard"))

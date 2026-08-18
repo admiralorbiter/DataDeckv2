@@ -1,4 +1,6 @@
+# pyrefly: ignore [missing-import]
 from flask_wtf import FlaskForm
+# pyrefly: ignore [missing-import]
 from flask_wtf.file import FileAllowed, FileRequired
 from wtforms import (
     BooleanField,
@@ -473,3 +475,17 @@ class CommentForm(FlaskForm):
         render_kw={"type": "hidden"},
     )
     submit = SubmitField("Post Comment")
+
+
+class DistrictSchoolImportForm(FlaskForm):
+    """Form for importing districts and schools via CSV upload."""
+
+    csv_file = FileField(
+        "CSV File",
+        validators=[
+            FileRequired("Please select a CSV file to upload."),
+            FileAllowed(["csv"], "CSV files only!"),
+        ],
+    )
+    submit = SubmitField("Import")
+
